@@ -134,6 +134,7 @@
                     </button>
                 </div>
 
+
                 <div class="chat-footer">
                     <p>Need immediate help? Call 988 (Suicide & Crisis Lifeline) or your campus emergency services</p>
                 </div>
@@ -142,5 +143,21 @@
     </main>
 
     <script src="script.js"></script>
+    <script src="https://cdn.botpress.cloud/webchat/v1/inject.js"></script>
+    <script>
+    window.botpressWebChat.init({
+        botId: "your-bot-id",
+        hostUrl: "https://cdn.botpress.cloud/webchat/v1",
+        messagingUrl: "https://messaging.botpress.cloud",
+        clientId: "your-client-id",
+        botName: "MindCare Assistant",
+        showPoweredBy: false,
+        enableConversationDeletion: true,
+        startConversation: {
+        trigger: "start-phq9" // auto-launch PHQ-9 flow
+        }
+    })
+    </script>
+
 </body>
 </html>

@@ -121,6 +121,44 @@ export function ChatInterface() {
     }
   }
 
+  useEffect(() => {
+  window.addEventListener("message", (event) => {
+    if (event.data.type === "phq9Result") {
+      handlePHQ9Score(event.data.score)
+    }
+  })
+}, [])
+
+const handlePHQ9Score = (score: number) => {
+  let message = ""
+  let type: Message["type"] = "normal"
+
+  if (score >= 20) {
+    message = "Your PHQ-9 score suggests severe depression. I'm here to support you, but I strongly recommend speaking with a mental health professional. Would you like help finding one?"
+    type = "crisis"
+  } else if (score >= 15) {
+    message = "Your score indicates moderately severe depression. You're not alone—support is available. Would you like to explore coping strategies or talk to a counselor?"
+    type = "referral"
+  } else if (score >= 10) {
+    message = "Your score suggests moderate depression. Small steps can help—would you like to talk about what’s been weighing on you?"
+    type = "normal"
+  } else {
+    message = "Thanks for completing the questionnaire. Your score is in the mild range. Still, if anything feels off, I'm here to listen."
+    type = "normal"
+  }
+
+  const botMessage: Message = {
+    id: Date.now().toString(),
+    content: message,
+    sender: "bot",
+    timestamp: new Date(),
+    type,
+  }
+
+  setMessages((prev) => [...prev, botMessage])
+}
+
+
   return (
     <Card className="max-w-4xl mx-auto">
       <div className="p-6">

@@ -121,13 +121,6 @@ export function ChatInterface() {
     }
   }
 
-  useEffect(() => {
-  window.addEventListener("message", (event) => {
-    if (event.data.type === "phq9Result") {
-      handlePHQ9Score(event.data.score)
-    }
-  })
-}, [])
 
 const handlePHQ9Score = (score: number) => {
   let message = ""

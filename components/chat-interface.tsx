@@ -43,8 +43,7 @@ export function ChatInterface() {
     // This function now makes the API call to your Node.js backend
     const generateBotResponse = async (userMessage: string) => {
         // Change the URL here to the specific address of your backend
-        const apiUrl = "http://localhost:8000/chat"
-
+       const apiUrl = "/api/chat";
         try {
             const response = await fetch(apiUrl, {
                 method: "POST",

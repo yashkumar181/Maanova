@@ -1,21 +1,13 @@
-// server.js
-
-const express = require('express');
-const Groq = require('groq-sdk');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-const app = express();
-const port = 8000;
+import { Groq } from "groq-sdk";
 
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
+// The SYSTEM_PROMPT from your server.js file
 const SYSTEM_PROMPT = `
-You are a compassionate, empathetic, and non-judgmental mental health chatbot for college students. 
-Your name is Campus Connect. You are designed to provide informational and supportive conversations, 
+You are a compassionate, empathetic, and non-judgmental mental health chatbot for college students.
+Your name is Campus Connect. You are designed to provide informational and supportive conversations,
 not professional therapy or medical advice.
 
 Your main roles are:
@@ -60,18 +52,21 @@ Your overall goal:
 - Always stay concise, supportive, and never overwhelm the user with too many questions.
 `;
 
+// The crisis keywords from your server.js file
 const CRISIS_KEYWORDS = [
     'suicide', 'kill myself', 'end it all', 'hurt myself', 'want to die',
     'take my life', 'can\'t go on', 'hopeless', 'in danger'
 ];
 
+// The crisis response from your server.js file
 const CRISIS_RESPONSE =
     "This is an emergency. If you or someone you know is in immediate danger, " +
     "please contact emergency services by dialing 911 or your local emergency number. " +
     "You can also get immediate help by calling the National Suicide & Crisis Lifeline at 988. " +
     "The college's counseling services can also be reached at [Your College's Helpline Number].";
 
-function isCrisis(userMessage) {
+// Function to check for crisis keywords
+function isCrisis(userMessage: string) {
     const userMessageLower = userMessage.toLowerCase();
     return CRISIS_KEYWORDS.some(keyword => {
         const regex = new RegExp(`\\b${keyword}\\b`);
@@ -79,27 +74,22 @@ function isCrisis(userMessage) {
     });
 }
 
-// Enable CORS for your React app
-app.use((req, res, next) => {
-    // In development, you can use http://localhost:3000 for your React app
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-});
-
-app.use(express.json());
-
-// This is the only endpoint your server should have
-app.post('/chat', async (req, res) => {
-    const { message } = req.body;
+// This function handles POST requests to the API route
+export async function POST(req: Request) {
+    const { message } = await req.json();
 
     if (!message) {
-        return res.status(400).json({ error: 'No message provided' });
+        return new Response(JSON.stringify({ error: 'No message provided' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 
     if (isCrisis(message)) {
-        return res.json({ response: CRISIS_RESPONSE, type: 'crisis' });
+        return new Response(JSON.stringify({ response: CRISIS_RESPONSE, type: 'crisis' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
 
     try {
@@ -120,14 +110,16 @@ app.post('/chat', async (req, res) => {
         });
 
         const aiResponse = completion.choices[0].message.content;
-        return res.json({ response: aiResponse, type: 'normal' });
+        return new Response(JSON.stringify({ response: aiResponse, type: 'normal' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
 
     } catch (e) {
         console.error("Error during Groq API call:", e);
-        return res.status(500).json({ response: "I'm sorry, I'm having trouble connecting right now. Please try again later.", type: 'error' });
+        return new Response(JSON.stringify({ response: "I'm sorry, I'm having trouble connecting right now. Please try again later.", type: 'error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+        });
     }
-});
-
-app.listen(port, () => {
-    console.log(`API server is running at http://localhost:${port}`);
-});
+}

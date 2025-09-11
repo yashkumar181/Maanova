@@ -1,21 +1,25 @@
 import * as admin from 'firebase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Check if the Firebase Admin app has already been initialized
-if (!admin.apps.length) {
+// Initialize the Firebase Admin app once
+const initializeFirebaseAdmin = () => {
+  if (!admin.apps.length) {
     try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+      });
+      console.log("Firebase Admin Initialized successfully.");
     } catch (error) {
-        console.log('Firebase admin initialization error', (error as Error).stack);
+      console.error('Firebase admin initialization error', (error as Error).stack);
     }
-}
+  }
+};
 
+initializeFirebaseAdmin();
 const db = admin.firestore();
 
 export async function POST(req: NextRequest) {

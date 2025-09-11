@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, Calendar, BookOpen, Users, BarChart3 } from "lucide-react"
 import Link from "next/link"
+import ThemeToggle from "@/components/ThemeToggle";
 
 export function Navigation() {
   return (
@@ -45,7 +46,8 @@ export function Navigation() {
             </Link>
           </div>
 
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Get Help Now</Button>
+          {/* This is where the theme toggle button is now */}
+          <ThemeToggle />
         </div>
       </div>
     </nav>

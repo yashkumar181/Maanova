@@ -83,7 +83,7 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     });
 
     return () => unsubscribeAuth();
-  }, [auth, db]);
+  }, []);
 
   // Fetch metrics whenever the collegeId or dateRange changes
   useEffect(() => {

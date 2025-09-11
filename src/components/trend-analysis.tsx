@@ -78,7 +78,7 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
     });
 
     return () => unsubscribeAuth();
-  }, [auth, db]);
+  }, []);
   
   useEffect(() => {
     if (!db || !collegeId) return;
@@ -116,7 +116,7 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
     const unsubscribe = onSnapshot(trendsQuery, (snapshot) => {
       const data: { [key: string]: { anxiety: number; depression: number; stress: number; wellness: number; } } = {};
       const today = new Date();
-      let labels: string[] = [];
+      const labels: string[] = [];
 
       if (dateRange === '7d' || dateRange === '30d') {
         const days = dateRange === '7d' ? 7 : 30;

@@ -5,47 +5,149 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Phone, Clock, CheckCircle, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useState, useEffect } from "react"
+import { collection, getDocs, getFirestore, query, where, Timestamp, Firestore, onSnapshot, getAggregateFromServer, count, orderBy } from 'firebase/firestore';
+import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
+import { getAuth, Auth, onAuthStateChanged } from 'firebase/auth';
+
+// Firebase initialization
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let auth: Auth | undefined;
+
+try {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  db = getFirestore(app);
+  auth = getAuth(app);
+} catch (error) {
+  console.error("Firebase initialization failed:", error);
+  console.warn("Please check your .env.local file for correct Firebase credentials.");
+}
 
 interface CrisisTrackingProps {
   dateRange: string
 }
 
-const crisisEvents = [
-  {
-    id: "1",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    severity: "high",
-    status: "resolved",
-    responseTime: "3 minutes",
-    followUpRequired: false,
-  },
-  {
-    id: "2",
-    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-    severity: "medium",
-    status: "monitoring",
-    responseTime: "5 minutes",
-    followUpRequired: true,
-  },
-  {
-    id: "3",
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    severity: "high",
-    status: "resolved",
-    responseTime: "2 minutes",
-    followUpRequired: false,
-  },
-  {
-    id: "4",
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    severity: "low",
-    status: "resolved",
-    responseTime: "8 minutes",
-    followUpRequired: false,
-  },
-]
+interface CrisisEvent {
+  id: string;
+  timestamp: Date;
+  severity: string;
+  status: string;
+  responseTime: number;
+  followUpRequired: boolean;
+  collegeId: string;
+}
 
 export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
+  const [crisisEvents, setCrisisEvents] = useState<CrisisEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [collegeId, setCollegeId] = useState<string | null>(null);
+
+  // Use onAuthStateChanged to get the current user's college ID
+  useEffect(() => {
+    if (!auth || !db) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const adminDocRef = collection(db, "admins");
+          const q = query(adminDocRef, where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const adminDoc = querySnapshot.docs[0];
+            const fetchedCollegeId = adminDoc.id;
+            setCollegeId(fetchedCollegeId);
+          } else {
+            console.error("No admin document found for this user.");
+          }
+        } catch (error) {
+          console.error("Error fetching admin data:", error);
+        }
+      } else {
+        console.log("No user is signed in.");
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [auth, db]);
+
+  // Use onSnapshot to fetch and listen for real-time crisis data
+  useEffect(() => {
+    if (!db || !collegeId) return;
+    
+    setLoading(true);
+
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch(dateRange) {
+      case '24h':
+        startDate.setHours(now.getHours() - 24);
+        break;
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate = new Date(0);
+        break;
+    }
+
+    const q = query(
+      collection(db, "crisisEvents"),
+      where("collegeId", "==", collegeId),
+      where("timestamp", ">=", Timestamp.fromDate(startDate)),
+      orderBy("timestamp", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const events: CrisisEvent[] = [];
+      snapshot.forEach((doc) => {
+        events.push({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp.toDate()
+        } as CrisisEvent);
+      });
+      setCrisisEvents(events);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching crisis events:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db, collegeId, dateRange]);
+
+  const totalInterventions = crisisEvents.length;
+  const resolvedEvents = crisisEvents.filter(event => event.status === 'resolved');
+  const resolutionRate = totalInterventions > 0 ? ((resolvedEvents.length / totalInterventions) * 100).toFixed(0) : "0";
+  const totalResponseTime = resolvedEvents.reduce((sum, event) => sum + (event.responseTime || 0), 0);
+  const avgResponseTime = resolvedEvents.length > 0 ? (totalResponseTime / resolvedEvents.length) : 0;
+  const followUpsRequired = crisisEvents.filter(event => event.followUpRequired).length;
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "high":
@@ -72,6 +174,14 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
     }
   }
 
+  if (loading) {
+    return <div className="text-center p-8">Loading crisis events...</div>;
+  }
+  
+  if (!collegeId) {
+    return <div className="text-center p-8 text-red-600">Please log in to view this section.</div>;
+  }
+
   return (
     <div className="space-y-6">
       <Alert className="border-red-200 bg-red-50">
@@ -88,7 +198,7 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
             <AlertTriangle className="h-5 w-5 text-red-600" />
             <span className="text-sm font-medium">Total Interventions</span>
           </div>
-          <p className="text-2xl font-bold">12</p>
+          <p className="text-2xl font-bold">{totalInterventions}</p>
           <p className="text-xs text-muted-foreground">This period</p>
         </Card>
 
@@ -97,7 +207,7 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
             <Clock className="h-5 w-5 text-blue-600" />
             <span className="text-sm font-medium">Avg Response Time</span>
           </div>
-          <p className="text-2xl font-bold">4.2 min</p>
+          <p className="text-2xl font-bold">{avgResponseTime.toFixed(1)} min</p>
           <p className="text-xs text-muted-foreground">Target: &lt;5 min</p>
         </Card>
 
@@ -106,7 +216,7 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="text-sm font-medium">Resolution Rate</span>
           </div>
-          <p className="text-2xl font-bold">92%</p>
+          <p className="text-2xl font-bold">{resolutionRate}%</p>
           <p className="text-xs text-muted-foreground">Successfully resolved</p>
         </Card>
 
@@ -115,7 +225,7 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
             <Users className="h-5 w-5 text-purple-600" />
             <span className="text-sm font-medium">Follow-ups</span>
           </div>
-          <p className="text-2xl font-bold">3</p>
+          <p className="text-2xl font-bold">{followUpsRequired}</p>
           <p className="text-xs text-muted-foreground">Requiring monitoring</p>
         </Card>
       </div>
@@ -130,38 +240,42 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
         </div>
 
         <div className="space-y-4">
-          {crisisEvents.map((event) => (
-            <div key={event.id} className="border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <Badge variant="outline" className={getSeverityColor(event.severity)}>
-                    {event.severity.toUpperCase()}
-                  </Badge>
-                  <Badge variant="outline" className={getStatusColor(event.status)}>
-                    {event.status.toUpperCase()}
-                  </Badge>
+          {crisisEvents.length > 0 ? (
+            crisisEvents.map((event) => (
+              <div key={event.id} className="border border-border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="outline" className={getSeverityColor(event.severity)}>
+                      {event.severity.toUpperCase()}
+                    </Badge>
+                    <Badge variant="outline" className={getStatusColor(event.status)}>
+                      {event.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {event.timestamp.toLocaleDateString()} {event.timestamp.toLocaleTimeString()}
+                  </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {event.timestamp.toLocaleDateString()} {event.timestamp.toLocaleTimeString()}
-                </span>
-              </div>
 
-              <div className="grid md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Response Time:</span>
-                  <span className="ml-2">{event.responseTime}</span>
-                </div>
-                <div>
-                  <span className="font-medium">Follow-up Required:</span>
-                  <span className="ml-2">{event.followUpRequired ? "Yes" : "No"}</span>
-                </div>
-                <div>
-                  <span className="font-medium">Event ID:</span>
-                  <span className="ml-2 font-mono">#{event.id}</span>
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Response Time:</span>
+                    <span className="ml-2">{event.responseTime} minutes</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Follow-up Required:</span>
+                    <span className="ml-2">{event.followUpRequired ? "Yes" : "No"}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Event ID:</span>
+                    <span className="ml-2 font-mono">#{event.id.slice(0, 8)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="text-center text-muted-foreground p-8">No crisis events found for this period.</div>
+          )}
         </div>
       </Card>
 

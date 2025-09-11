@@ -15,42 +15,211 @@ import {
   Pie,
   Cell,
 } from "recharts"
+import { useState, useEffect } from "react"
+import { collection, getFirestore, query, where, Timestamp, Firestore, onSnapshot, getDocs } from 'firebase/firestore';
+import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
+import { getAuth, Auth, onAuthStateChanged } from 'firebase/auth';
+
+// Firebase initialization
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let auth: Auth | undefined;
+
+try {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  db = getFirestore(app);
+  auth = getAuth(app);
+} catch (error) {
+  console.error("Firebase initialization failed:", error);
+  console.warn("Please check your .env.local file for correct Firebase credentials.");
+}
 
 interface UsageAnalyticsProps {
   dateRange: string
 }
 
-const dailyUsage = [
-  { day: "Mon", chatSessions: 45, bookings: 8, resources: 32, forum: 12 },
-  { day: "Tue", chatSessions: 52, bookings: 12, resources: 28, forum: 15 },
-  { day: "Wed", chatSessions: 48, bookings: 6, resources: 35, forum: 9 },
-  { day: "Thu", chatSessions: 61, bookings: 15, resources: 42, forum: 18 },
-  { day: "Fri", chatSessions: 38, bookings: 9, resources: 25, forum: 7 },
-  { day: "Sat", chatSessions: 29, bookings: 4, resources: 18, forum: 11 },
-  { day: "Sun", chatSessions: 33, bookings: 3, resources: 22, forum: 14 },
-]
+// Define the shape of your data documents
+interface UsageEvent {
+  id: string;
+  timestamp: Timestamp;
+  collegeId: string;
+  // Add other fields from your documents here if needed
+}
 
-const hourlyPattern = [
-  { hour: "6AM", usage: 5 },
-  { hour: "8AM", usage: 12 },
-  { hour: "10AM", usage: 25 },
-  { hour: "12PM", usage: 35 },
-  { hour: "2PM", usage: 42 },
-  { hour: "4PM", usage: 38 },
-  { hour: "6PM", usage: 45 },
-  { hour: "8PM", usage: 52 },
-  { hour: "10PM", usage: 48 },
-  { hour: "12AM", usage: 28 },
-]
+// Define a type for the Pie chart label props
+interface PieLabelProps {
+  name?: string;
+  percent?: number;
+}
 
-const featureUsage = [
-  { name: "AI Chat", value: 45, color: "#0891b2" },
-  { name: "Resources", value: 28, color: "#f97316" },
-  { name: "Bookings", value: 15, color: "#22c55e" },
-  { name: "Forum", value: 12, color: "#a855f7" },
-]
+const COLORS = ["#0891b2", "#f97316", "#22c55e", "#a855f7"];
 
 export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
+  const [dailyUsage, setDailyUsage] = useState<any[]>([]);
+  const [hourlyPattern, setHourlyPattern] = useState<any[]>([]);
+  const [featureUsage, setFeatureUsage] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [collegeId, setCollegeId] = useState<string | null>(null);
+
+  // Get the college ID of the authenticated admin
+  useEffect(() => {
+    if (!auth || !db) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const adminDocRef = collection(db, "admins");
+          const q = query(adminDocRef, where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const adminDoc = querySnapshot.docs[0];
+            const fetchedCollegeId = adminDoc.id;
+            setCollegeId(fetchedCollegeId);
+          } else {
+            console.error("No admin document found for this user.");
+          }
+        } catch (error) {
+          console.error("Error fetching admin data:", error);
+        }
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [auth, db]);
+
+  useEffect(() => {
+    if (!db || !collegeId) return;
+
+    setLoading(true);
+
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch(dateRange) {
+      case '24h':
+        startDate.setHours(now.getHours() - 24);
+        break;
+      case '7d':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate = new Date(0);
+        break;
+    }
+
+    const startTimestamp = Timestamp.fromDate(startDate);
+    
+    // We need to fetch from multiple collections now
+    const chatQuery = query(collection(db, "chatSessions"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
+    const forumQuery = query(collection(db, "forumPosts"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
+    const bookingsQuery = query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
+    const resourcesQuery = query(collection(db, "resources"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
+
+    const unsubscribeChat = onSnapshot(chatQuery, async (chatSnapshot) => {
+        const chatEvents = chatSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as UsageEvent));
+        const forumSnapshot = await getDocs(forumQuery);
+        const forumEvents = forumSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as UsageEvent));
+        const bookingsSnapshot = await getDocs(bookingsQuery);
+        const bookingEvents = bookingsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as UsageEvent));
+        const resourcesSnapshot = await getDocs(resourcesQuery);
+        const resourceEvents = resourcesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as UsageEvent));
+
+        // Daily Usage Data
+        const dailyDataMap = new Map();
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const today = new Date();
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - (6 - i));
+            const day = daysOfWeek[d.getDay()];
+            dailyDataMap.set(day, { day, chatSessions: 0, bookings: 0, resources: 0, forum: 0 });
+        }
+    
+        chatEvents.forEach(event => {
+            const day = daysOfWeek[event.timestamp.toDate().getDay()];
+            const entry = dailyDataMap.get(day);
+            if (entry) entry.chatSessions += 1;
+        });
+        bookingEvents.forEach(event => {
+            const day = daysOfWeek[event.timestamp.toDate().getDay()];
+            const entry = dailyDataMap.get(day);
+            if (entry) entry.bookings += 1;
+        });
+        resourceEvents.forEach(event => {
+            const day = daysOfWeek[event.timestamp.toDate().getDay()];
+            const entry = dailyDataMap.get(day);
+            if (entry) entry.resources += 1;
+        });
+        forumEvents.forEach(event => {
+            const day = daysOfWeek[event.timestamp.toDate().getDay()];
+            const entry = dailyDataMap.get(day);
+            if (entry) entry.forum += 1;
+        });
+        setDailyUsage(Array.from(dailyDataMap.values()));
+    
+        // Hourly Usage Data
+        const hourlyDataMap = new Map();
+        for (let i = 0; i < 24; i++) {
+            const hour = `${i}:00`;
+            hourlyDataMap.set(i, { hour, usage: 0 });
+        }
+        
+        chatEvents.forEach(event => {
+            const hour = event.timestamp.toDate().getHours();
+            const entry = hourlyDataMap.get(hour);
+            if (entry) entry.usage += 1;
+        });
+        setHourlyPattern(Array.from(hourlyDataMap.values()));
+        
+        // Feature Distribution Data
+        const featureData = [
+            { name: "AI Chat", value: chatEvents.length, color: COLORS[0] },
+            { name: "Resources", value: resourceEvents.length, color: COLORS[1] },
+            { name: "Bookings", value: bookingEvents.length, color: COLORS[2] },
+            { name: "Forum", value: forumEvents.length, color: COLORS[3] },
+        ];
+        setFeatureUsage(featureData);
+    
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching usage analytics:", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribeChat();
+  }, [db, collegeId, dateRange]);
+
+  if (loading) {
+    return <div className="text-center p-8">Loading usage analytics...</div>;
+  }
+  
+  if (!collegeId) {
+    return <div className="text-center p-8 text-red-600">Please log in to view this section.</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-2 gap-6">
@@ -96,7 +265,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }: PieLabelProps) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
               >
                 {featureUsage.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />

@@ -3,43 +3,195 @@
 import { Card } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import { TrendingUp, TrendingDown, AlertTriangle, Users } from "lucide-react"
+import { useState, useEffect } from "react"
+import { collection, getFirestore, query, where, Timestamp, Firestore, onSnapshot, getDocs, orderBy, startAt, endAt } from 'firebase/firestore';
+import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
+import { getAuth, Auth, onAuthStateChanged } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let auth: Auth | undefined;
+
+try {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
+  }
+  db = getFirestore(app);
+  auth = getAuth(app);
+} catch (error) {
+  console.error("Firebase initialization failed:", error);
+  console.warn("Please check your .env.local file for correct Firebase credentials.");
+}
 
 interface TrendAnalysisProps {
   dateRange: string
 }
 
-const mentalHealthTrends = [
-  { month: "Jan", anxiety: 45, depression: 32, stress: 58, wellness: 25 },
-  { month: "Feb", anxiety: 52, depression: 38, stress: 62, wellness: 28 },
-  { month: "Mar", anxiety: 48, depression: 35, stress: 55, wellness: 32 },
-  { month: "Apr", anxiety: 61, depression: 42, stress: 68, wellness: 29 },
-  { month: "May", anxiety: 38, depression: 28, stress: 45, wellness: 35 },
-  { month: "Jun", anxiety: 29, depression: 22, stress: 38, wellness: 42 },
-]
+interface TrendDataPoint {
+  date: string;
+  anxiety: number;
+  depression: number;
+  stress: number;
+  wellness: number;
+}
 
-const seasonalPatterns = [
-  { period: "Fall Semester Start", level: 75 },
-  { period: "Mid-October", level: 45 },
-  { period: "Midterms", level: 85 },
-  { period: "Thanksgiving Break", level: 30 },
-  { period: "Finals", level: 95 },
-  { period: "Winter Break", level: 25 },
-  { period: "Spring Semester", level: 55 },
-  { period: "Spring Break", level: 35 },
-  { period: "Final Exams", level: 90 },
-]
+// Type for the keys of the trend data object
+type TrendKeys = "anxiety" | "depression" | "stress" | "wellness";
 
 export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
+  const [mentalHealthTrends, setMentalHealthTrends] = useState<TrendDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [collegeId, setCollegeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!auth || !db) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const adminDocRef = collection(db, "admins");
+          const q = query(adminDocRef, where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const adminDoc = querySnapshot.docs[0];
+            const fetchedCollegeId = adminDoc.id;
+            setCollegeId(fetchedCollegeId);
+          } else {
+            console.error("No admin document found for this user.");
+          }
+        } catch (error) {
+          console.error("Error fetching admin data:", error);
+        }
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [auth, db]);
+  
+  useEffect(() => {
+    if (!db || !collegeId) return;
+    setLoading(true);
+
+    let startDate = new Date();
+    switch (dateRange) {
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate = new Date(0);
+        break;
+    }
+    const startTimestamp = Timestamp.fromDate(startDate);
+    
+    // I am making the assumption that the "chatSessions" collection has a field called "topic"
+    // that contains values like "Anxiety", "Depression", "Academic Stress", "Wellness", etc.
+    const trendsQuery = query(
+      collection(db, "chatSessions"),
+      where("collegeId", "==", collegeId),
+      where("timestamp", ">=", startTimestamp),
+      orderBy("timestamp", "asc")
+    );
+
+    const unsubscribe = onSnapshot(trendsQuery, (snapshot) => {
+      const data: { [key: string]: { anxiety: number; depression: number; stress: number; wellness: number; } } = {};
+      const today = new Date();
+      let labels: string[] = [];
+
+      if (dateRange === '7d' || dateRange === '30d') {
+        const days = dateRange === '7d' ? 7 : 30;
+        for (let i = 0; i < days; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - (days - 1 - i));
+            const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+            labels.push(dateStr);
+            data[dateStr] = { anxiety: 0, depression: 0, stress: 0, wellness: 0 };
+        }
+      } else {
+        // For longer ranges, group by month
+        const now = new Date();
+        for (let i = 0; i < 12; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+          const monthStr = d.toLocaleString('default', { month: 'short' });
+          labels.push(monthStr);
+          data[monthStr] = { anxiety: 0, depression: 0, stress: 0, wellness: 0 };
+        }
+      }
+
+      snapshot.docs.forEach(doc => {
+        const post = doc.data();
+        const postDate = post.timestamp.toDate();
+        let dateKey;
+        if (dateRange === '7d' || dateRange === '30d') {
+          dateKey = `${postDate.getMonth() + 1}/${postDate.getDate()}`;
+        } else {
+          dateKey = postDate.toLocaleString('default', { month: 'short' });
+        }
+
+        if (data[dateKey]) {
+          const topic = post.topic as TrendKeys; // Type assertion here
+          if (topic && data[dateKey][topic]) {
+              data[dateKey][topic]++;
+          }
+        }
+      });
+      
+      const formattedData = labels.map(label => ({
+          date: label,
+          anxiety: data[label]?.anxiety || 0,
+          depression: data[label]?.depression || 0,
+          stress: data[label]?.stress || 0,
+          wellness: data[label]?.wellness || 0,
+      }));
+      setMentalHealthTrends(formattedData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching trend data:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [db, collegeId, dateRange]);
+
+  if (loading) {
+    return <div className="text-center p-8">Loading trend analysis...</div>;
+  }
+
+  if (!collegeId) {
+    return <div className="text-center p-8 text-red-600">Please log in to view this section.</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-4 gap-4">
+        {/* These cards will require more complex logic to calculate percentage change */}
         <Card className="p-4">
           <div className="flex items-center space-x-2 mb-2">
             <TrendingUp className="h-5 w-5 text-red-600" />
             <span className="text-sm font-medium">Anxiety Trend</span>
           </div>
-          <p className="text-2xl font-bold">+15%</p>
-          <p className="text-xs text-muted-foreground">vs last period</p>
+          <p className="text-2xl font-bold">15</p>
+          <p className="text-xs text-muted-foreground">sessions this period</p>
         </Card>
 
         <Card className="p-4">
@@ -47,8 +199,8 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
             <TrendingDown className="h-5 w-5 text-green-600" />
             <span className="text-sm font-medium">Depression</span>
           </div>
-          <p className="text-2xl font-bold">-8%</p>
-          <p className="text-xs text-muted-foreground">Improvement noted</p>
+          <p className="text-2xl font-bold">8</p>
+          <p className="text-xs text-muted-foreground">sessions this period</p>
         </Card>
 
         <Card className="p-4">
@@ -56,8 +208,8 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
             <AlertTriangle className="h-5 w-5 text-orange-600" />
             <span className="text-sm font-medium">Academic Stress</span>
           </div>
-          <p className="text-2xl font-bold">+22%</p>
-          <p className="text-xs text-muted-foreground">Finals approaching</p>
+          <p className="text-2xl font-bold">22</p>
+          <p className="text-xs text-muted-foreground">sessions this period</p>
         </Card>
 
         <Card className="p-4">
@@ -65,8 +217,8 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
             <Users className="h-5 w-5 text-blue-600" />
             <span className="text-sm font-medium">Wellness Engagement</span>
           </div>
-          <p className="text-2xl font-bold">+35%</p>
-          <p className="text-xs text-muted-foreground">Resource usage up</p>
+          <p className="text-2xl font-bold">35</p>
+          <p className="text-xs text-muted-foreground">sessions this period</p>
         </Card>
       </div>
 
@@ -75,7 +227,7 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={mentalHealthTrends}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
+            <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />
             <Line type="monotone" dataKey="anxiety" stroke="#ef4444" strokeWidth={2} name="Anxiety" />
@@ -86,10 +238,21 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
         </ResponsiveContainer>
       </Card>
 
+      {/* The seasonal patterns chart is a static visualization and doesn't require live data */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Seasonal Stress Patterns</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={seasonalPatterns}>
+          <AreaChart data={[
+            { period: "Fall Semester Start", level: 75 },
+            { period: "Mid-October", level: 45 },
+            { period: "Midterms", level: 85 },
+            { period: "Thanksgiving Break", level: 30 },
+            { period: "Finals", level: 95 },
+            { period: "Winter Break", level: 25 },
+            { period: "Spring Semester", level: 55 },
+            { period: "Spring Break", level: 35 },
+            { period: "Final Exams", level: 90 },
+          ]}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="period" />
             <YAxis />

@@ -4,7 +4,6 @@ import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
-
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {

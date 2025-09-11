@@ -128,7 +128,7 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
         const chatCount = chatSnapshot.data().count;
 
         // Fetch Bookings count
-        const bookingQuery = query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
+        const bookingQuery = query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp));
         const bookingSnapshot = await getAggregateFromServer(bookingQuery, { count: count() });
         const bookingCount = bookingSnapshot.data().count;
 
@@ -138,7 +138,7 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
         const forumCount = forumSnapshot.data().count;
 
         // Fetch Crisis Interventions count
-        const crisisQuery = query(collection(db, "crisisEvents"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
+        const crisisQuery = query(collection(db, "crisisEvents"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp));
         const crisisSnapshot = await getAggregateFromServer(crisisQuery, { count: count() });
         const crisisCount = crisisSnapshot.data().count;
 
@@ -149,13 +149,14 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
 
         // Update the state with the fetched data
         setMetrics({
-          ...metrics,
           activeUsers: activeUsersCount,
           chatSessions: chatCount,
           counselorBookings: bookingCount,
           forumPosts: forumCount,
           crisisInterventions: crisisCount,
           resourcesAccessed: resourcesAccessedCount,
+          satisfactionScore: 0,
+          responseTime: 0
         });
 
       } catch (error) {

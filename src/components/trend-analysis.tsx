@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 import { TrendingUp, TrendingDown, AlertTriangle, Users } from "lucide-react"
 import { useState, useEffect } from "react"
-import { collection, getFirestore, query, where, Timestamp, Firestore, onSnapshot, getDocs, orderBy, startAt, endAt } from 'firebase/firestore';
+import { collection, getFirestore, query, where, Timestamp, Firestore, onSnapshot, getDocs, orderBy } from 'firebase/firestore';
 import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
 import { getAuth, Auth, onAuthStateChanged } from 'firebase/auth';
 

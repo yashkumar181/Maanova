@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, Calendar, BookOpen, Users, BarChart3 } from "lucide-react"
 import Link from "next/link"
 import ThemeToggle from "@/components/ThemeToggle";
-
 export function Navigation() {
   return (
     <nav className="bg-card border-b border-border">

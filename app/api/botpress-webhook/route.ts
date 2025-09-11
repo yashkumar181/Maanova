@@ -10,9 +10,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { user, conversation, type } = body;
     
-    // We will only log new messages sent by the user
     if (type !== 'message_sent' || user.id === 'botpress-bot') {
-        return NextResponse.json({ message: 'Event ignored.' }, { status: 200 });
+      return NextResponse.json({ message: 'Event ignored.' }, { status: 200 });
     }
     
     const messageData = {
@@ -23,7 +22,6 @@ export async function POST(req: NextRequest) {
       source: 'botpress',
     };
 
-    // Add the message to a Firestore collection
     await db.collection('chatbot_messages').add(messageData);
 
     return NextResponse.json({ message: 'Data received and logged successfully.' });

@@ -3,6 +3,7 @@
 import { HeroSection } from '@/components/hero-section';
 import { Navigation } from '@/components/navigation';
 import { ChatInterface } from '@/components/chat-interface'; // Import the chat component
+export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
   return (

@@ -1,5 +1,6 @@
 import { PeerSupportForum } from "@/components/peer-support-forum"
 import { Navigation } from "@/components/navigation"
+export const dynamic = 'force-dynamic';
 
 export default function ForumPage() {
   return (

@@ -1,5 +1,6 @@
 import { CounselorGrid } from "@/components/counselor-grid"
 import { Navigation } from "@/components/navigation"
+export const dynamic = 'force-dynamic';
 
 export default function BookingPage() {
   return (

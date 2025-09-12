@@ -1,5 +1,6 @@
 import { ResourceHub } from "@/components/resource-hub"
 import { Navigation } from "@/components/navigation"
+export const dynamic = 'force-dynamic';
 
 export default function ResourcesPage() {
   return (

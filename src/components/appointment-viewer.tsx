@@ -12,7 +12,7 @@ interface Appointment {
   id: string;
   studentName: string;
   counselorName: string;
-  date: any;
+  date: Date;
   time: string;
   status: 'pending' | 'confirmed' | 'cancelled';
 }

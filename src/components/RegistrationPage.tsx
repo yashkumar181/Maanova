@@ -5,25 +5,33 @@ import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase-config';
+import { useToast } from './ui/use-toast';
+
+// Define a type for the form data to avoid TypeScript errors
+type AdminFormData = {
+  username: string;
+  password: string;
+  confirmPassword: string;
+  collegeName: string;
+  phone: string;
+  gmail: string;
+  counsellorName: string;
+  contactDetails: string;
+  country: string;
+  state: string;
+  city: string;
+  description: string;
+};
 
 export function RegistrationPage() {
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
-    collegeName: '',
-    phone: '',
-    gmail: '',
-    counsellorName: '',
-    contactDetails: '',
-    country: '',
-    state: '',
-    city: '',
-    description: '',
+  const [formData, setFormData] = useState<AdminFormData>({
+    username: '', password: '', confirmPassword: '', collegeName: '',
+    phone: '', gmail: '', counsellorName: '', contactDetails: '',
+    country: '', state: '', city: '', description: '',
   });
-  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -32,24 +40,19 @@ export function RegistrationPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage('');
     setIsLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
-      setMessage('❌ Passwords do not match!');
+      toast({ title: "Error", description: "Passwords do not match!", variant: "destructive" });
       setIsLoading(false);
       return;
     }
 
     try {
-      // Step 1: Create the user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, formData.gmail, formData.password);
       const user = userCredential.user;
-
-      // Step 2: Generate a unique college ID
       const collegeId = `CLG-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
 
-      // Step 3: Store the admin's details in Firestore
       await setDoc(doc(db, "admins", collegeId), {
         uid: user.uid,
         username: formData.username,
@@ -64,14 +67,20 @@ export function RegistrationPage() {
         description: formData.description,
       });
 
-      setMessage(`✅ Registration Successful! Your College ID is: ${collegeId}. Please save it. Redirecting to login...`);
-      setTimeout(() => {
-        router.push('/login');
-      }, 5000);
+      toast({
+        title: "Registration Successful!",
+        description: `Your College ID is: ${collegeId}. Please save it.`,
+      });
+      router.push('/login');
 
-    } catch (error: any) {
+    } catch (error) { // <-- THE FIX IS HERE
       console.error(error);
-      setMessage(`❌ Registration Failed: ${error.message}`);
+      // This is a type-safe way to handle errors
+      if (error instanceof Error) {
+        toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Registration Failed", description: "An unknown error occurred.", variant: "destructive" });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -120,13 +129,9 @@ export function RegistrationPage() {
           >
             {isLoading ? 'Registering...' : 'Register'}
           </button>
-          {message && (
-            <p className={`mt-4 text-sm text-center ${message.includes('❌') ? 'text-red-600' : 'text-green-600'}`}>
-              {message}
-            </p>
-          )}
         </form>
       </div>
     </div>
   );
 }
+

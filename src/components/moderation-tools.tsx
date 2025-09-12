@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore' // <-- 1. IMPORT TIMESTAMP
 import { onAuthStateChanged } from 'firebase/auth'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Flag, Eye, CheckCircle, X, MessageCircle, AlertTriangle } from "lucide-react"
-import { auth, db } from '../lib/firebase-config' // In your admin project
-import { useToast } from './ui/use-toast'
+import { auth, db } from '../lib/firebase-config'
+import { useToast } from "./ui/use-toast"
 
 // Define the shape of a forum post document from Firestore
 interface ForumPost {
@@ -16,10 +16,10 @@ interface ForumPost {
   title: string;
   authorUsername: string;
   content: string;
-  timestamp: any; // Firestore timestamp object
+  timestamp: Timestamp; // <-- 2. FIX: Use the specific Timestamp type
   flags: number;
   category: string;
-  riskLevel?: string; // Make it optional to prevent errors
+  riskLevel?: string;
   status: 'pending' | 'approved' | 'rejected';
 }
 
@@ -54,8 +54,6 @@ export function ModerationTools() {
     if (!collegeId) return;
 
     const postsRef = collection(db, "forumPosts");
-
-    // Listener for pending posts
     const pendingQuery = query(postsRef, where("collegeId", "==", collegeId), where("status", "==", "pending"));
     const unsubscribePending = onSnapshot(pendingQuery, (snapshot) => {
       const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ForumPost));
@@ -64,11 +62,7 @@ export function ModerationTools() {
       setLoading(false);
     });
 
-    // You can add listeners for reported, approvedToday, etc. here as well to make the stats real-time
-
-    return () => {
-      unsubscribePending();
-    };
+    return () => unsubscribePending();
   }, [collegeId]);
 
   const handleApprove = async (postId: string) => {
@@ -76,21 +70,28 @@ export function ModerationTools() {
     try {
       await updateDoc(postRef, { status: "approved" });
       toast({ title: "Success", description: "Post has been approved." });
-    } catch (error) {
+    } catch (error) { // <-- 3. FIX: Handle error safely
       console.error("Error approving post:", error);
-      toast({ title: "Error", description: "Could not approve post.", variant: "destructive" });
+      if (error instanceof Error) {
+        toast({ title: "Error", description: `Could not approve post: ${error.message}`, variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: "An unknown error occurred.", variant: "destructive" });
+      }
     }
   };
 
   const handleReject = async (postId: string) => {
     const postRef = doc(db, "forumPosts", postId);
     try {
-      // You can either delete the post or set its status to "rejected"
       await deleteDoc(postRef); 
       toast({ title: "Success", description: "Post has been rejected and deleted." });
-    } catch (error) {
+    } catch (error) { // <-- 4. FIX: Handle error safely
       console.error("Error rejecting post:", error);
-      toast({ title: "Error", description: "Could not reject post.", variant: "destructive" });
+       if (error instanceof Error) {
+        toast({ title: "Error", description: `Could not reject post: ${error.message}`, variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: "An unknown error occurred.", variant: "destructive" });
+      }
     }
   };
 
@@ -106,7 +107,6 @@ export function ModerationTools() {
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-4 gap-4">
-        {/* Stat Cards */}
         <Card className="p-4">
           <div className="flex items-center space-x-2 mb-2"><Eye className="h-5 w-5 text-blue-600" /><span>Pending Review</span></div>
           <p className="text-2xl font-bold">{stats.pending}</p><p className="text-xs text-muted-foreground">Posts awaiting approval</p>
@@ -124,7 +124,6 @@ export function ModerationTools() {
           <p className="text-2xl font-bold">{stats.highRisk}</p><p className="text-xs text-muted-foreground">Require immediate review</p>
         </Card>
       </div>
-
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Posts Pending Review</h3>
         <div className="space-y-4">
@@ -138,7 +137,6 @@ export function ModerationTools() {
                     <div className="flex items-center space-x-2 mb-2">
                       <h4 className="font-medium">{post.title}</h4>
                       <Badge variant="outline" className={getRiskColor(post.riskLevel)}>
-                        {/* THE FIX IS HERE: Check if riskLevel exists before calling toUpperCase() */}
                         {post.riskLevel ? post.riskLevel.toUpperCase() : 'N/A'}
                       </Badge>
                       {post.flags > 0 && (

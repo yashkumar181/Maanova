@@ -1,17 +1,18 @@
-import { ChatInterface } from "@/components/chat-interface"
-import { Navigation } from "@/components/navigation"
-import { HeroSection } from "@/components/hero-section"
+"use client"; // This line is required for the external chatbot script to load
+
+import { HeroSection } from '@/components/hero-section';
+import { Navigation } from '@/components/navigation';
+import { ChatInterface } from '@/components/chat-interface'; // Import the chat component
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 space-y-12">
         <HeroSection />
-        <div className="mt-12">
-          <ChatInterface />
-        </div>
-      </main>
-    </div>
-  )
+        <ChatInterface /> {/* Add the chat component back to the page */}
+      </div>
+    </main>
+  );
 }
+

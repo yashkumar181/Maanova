@@ -1,12 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BookingModal } from "@/components/booking-modal"
 import { Star, Clock, MapPin, Calendar } from "lucide-react"
+import { db, auth } from "@/lib/firebase"
+import { collection, getDocs, query, where } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Counselor {
   id: string
@@ -19,90 +23,92 @@ interface Counselor {
   availability: string
   bio: string
   image?: string
+  collegeId: string
 }
 
-const counselors: Counselor[] = [
-  {
-    id: "1",
-    name: "Dr. Sarah Chen",
-    title: "Licensed Clinical Psychologist",
-    specialties: ["Anxiety", "Depression", "Academic Stress"],
-    rating: 4.9,
-    experience: "8 years",
-    location: "Campus Health Center",
-    availability: "Mon-Fri, 9AM-5PM",
-    bio: "Specializes in cognitive behavioral therapy and mindfulness-based interventions for college students.",
-    image: "/professional-female-psychologist.png",
-  },
-  {
-    id: "2",
-    name: "Dr. Michael Rodriguez",
-    title: "Licensed Professional Counselor",
-    specialties: ["Relationship Issues", "Social Anxiety", "Identity"],
-    rating: 4.8,
-    experience: "6 years",
-    location: "Student Wellness Center",
-    availability: "Tue-Sat, 10AM-6PM",
-    bio: "Focuses on helping students navigate relationships, identity development, and social challenges.",
-    image: "/professional-male-counselor.jpg",
-  },
-  {
-    id: "3",
-    name: "Dr. Priya Patel",
-    title: "Clinical Social Worker",
-    specialties: ["Trauma", "PTSD", "Cultural Adjustment"],
-    rating: 4.9,
-    experience: "10 years",
-    location: "Campus Health Center",
-    availability: "Mon-Thu, 8AM-4PM",
-    bio: "Experienced in trauma-informed care and supporting international and diverse student populations.",
-    image: "/professional-female-social-worker.jpg",
-  },
-  {
-    id: "4",
-    name: "Dr. James Thompson",
-    title: "Psychiatrist",
-    specialties: ["Medication Management", "Bipolar", "ADHD"],
-    rating: 4.7,
-    experience: "12 years",
-    location: "Medical Center",
-    availability: "Wed-Fri, 1PM-7PM",
-    bio: "Specializes in psychiatric medication management and treatment of mood and attention disorders.",
-    image: "/professional-male-psychiatrist.png",
-  },
-  {
-    id: "5",
-    name: "Dr. Lisa Wang",
-    title: "Licensed Marriage & Family Therapist",
-    specialties: ["Family Issues", "Eating Disorders", "Self-Esteem"],
-    rating: 4.8,
-    experience: "7 years",
-    location: "Student Wellness Center",
-    availability: "Mon-Wed, 11AM-7PM",
-    bio: "Helps students work through family dynamics, body image issues, and building healthy self-worth.",
-    image: "/professional-female-therapist.png",
-  },
-  {
-    id: "6",
-    name: "Dr. Ahmed Hassan",
-    title: "Licensed Clinical Psychologist",
-    specialties: ["Grief & Loss", "Substance Use", "Crisis Intervention"],
-    rating: 4.9,
-    experience: "9 years",
-    location: "Campus Health Center",
-    availability: "Thu-Mon, 9AM-5PM",
-    bio: "Experienced in crisis intervention and supporting students through major life transitions and losses.",
-    image: "/professional-male-psychologist.jpg",
-  },
-]
-
 export function CounselorGrid() {
+  const [counselors, setCounselors] = useState<Counselor[]>([])
   const [selectedCounselor, setSelectedCounselor] = useState<Counselor | null>(null)
   const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [collegeId, setCollegeId] = useState<string | null>(null)
+  const [userUid, setUserUid] = useState<string | null>(null)
+
+  // Get current user's UID and college ID
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserUid(user.uid)
+        const studentQuery = query(collection(db, "students"), where("uid", "==", user.uid))
+        const studentSnapshot = await getDocs(studentQuery)
+        if (!studentSnapshot.empty) {
+          const fetchedCollegeId = studentSnapshot.docs[0].data().collegeId
+          setCollegeId(fetchedCollegeId)
+        }
+      }
+    })
+    return () => unsubscribeAuth()
+  }, [])
+
+
+  useEffect(() => {
+    const fetchCounselors = async () => {
+        if (!collegeId) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const q = query(collection(db, "counselors"), where("collegeId", "==", collegeId));
+            const querySnapshot = await getDocs(q);
+            const fetchedCounselors: Counselor[] = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            } as Counselor));
+            setCounselors(fetchedCounselors);
+        } catch (error) {
+            console.error("Error fetching counselors:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchCounselors();
+}, [collegeId]);
 
   const handleBookAppointment = (counselor: Counselor) => {
     setSelectedCounselor(counselor)
     setIsBookingOpen(true)
+  }
+  
+  if (loading) {
+    return (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="p-6">
+          <Skeleton className="h-16 w-16 rounded-full mb-4" />
+          <Skeleton className="h-6 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2 mb-4" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <Skeleton className="h-10 w-full mt-4" />
+        </Card>
+        <Card className="p-6">
+          <Skeleton className="h-16 w-16 rounded-full mb-4" />
+          <Skeleton className="h-6 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2 mb-4" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <Skeleton className="h-10 w-full mt-4" />
+        </Card>
+      </div>
+    )
+  }
+
+  if (counselors.length === 0) {
+    return <div className="text-center p-8 text-muted-foreground">No counselors available for your college at this time.</div>;
   }
 
   return (
@@ -172,6 +178,8 @@ export function CounselorGrid() {
           setIsBookingOpen(false)
           setSelectedCounselor(null)
         }}
+        collegeId={collegeId}
+        userUid={userUid}
       />
     </>
   )

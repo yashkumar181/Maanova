@@ -1,8 +1,14 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import {
+  collection,
+  addDoc,
+  Timestamp,
+  doc,
+  getDoc,
+} from "firebase/firestore"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,8 +18,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CalendarDays, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CalendarDays, Clock, CheckCircle, AlertCircle } from "lucide-react"
+
+// You will need to ensure these are correctly imported from your lib/firebase.ts file
+import { db, auth } from "@/lib/firebase"
+import { useToast } from "./ui/use-toast"
 
 interface Counselor {
   id: string
@@ -35,38 +45,78 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [appointmentType, setAppointmentType] = useState<string>("")
-  const [studentName, setStudentName] = useState("")
-  const [studentEmail, setStudentEmail] = useState("")
-  const [studentId, setStudentId] = useState("")
   const [reason, setReason] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isBooked, setIsBooked] = useState(false)
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate booking process
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    if (!counselor || !selectedDate || !selectedTime || !auth.currentUser) {
+      toast({
+        title: "Error",
+        description: "Missing required information for booking.",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+      return
+    }
 
-    setIsSubmitting(false)
-    setIsBooked(true)
+    try {
+      const studentDoc = await getDoc(doc(db, "students", auth.currentUser.uid))
+      const collegeId = studentDoc.exists() ? studentDoc.data()?.collegeId : null
 
-    // Reset form after 3 seconds and close modal
-    setTimeout(() => {
-      setIsBooked(false)
-      resetForm()
-      onClose()
-    }, 3000)
+      if (!collegeId) {
+        toast({
+          title: "Error",
+          description: "Could not find your college ID. Please contact support.",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      await addDoc(collection(db, "bookings"), {
+        counselorId: counselor.id,
+        studentUid: auth.currentUser.uid,
+        collegeId: collegeId,
+        date: selectedDate,
+        time: selectedTime,
+        appointmentType: appointmentType,
+        reason: reason,
+        status: "pending",
+        createdAt: Timestamp.now(),
+      })
+
+      setIsBooked(true)
+      toast({
+        title: "Success!",
+        description: "Your appointment has been booked.",
+      })
+
+      setTimeout(() => {
+        setIsBooked(false)
+        resetForm()
+        onClose()
+      }, 3000)
+
+    } catch (error) {
+      console.error("Error booking appointment:", error)
+      toast({
+        title: "Error",
+        description: "Failed to book appointment. Please try again.",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+    }
   }
 
   const resetForm = () => {
     setSelectedDate(new Date())
     setSelectedTime("")
     setAppointmentType("")
-    setStudentName("")
-    setStudentEmail("")
-    setStudentId("")
     setReason("")
   }
 
@@ -119,14 +169,12 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
             </div>
           </DialogTitle>
         </DialogHeader>
-
         <Alert className="border-primary/20 bg-primary/5">
           <AlertCircle className="h-4 w-4 text-primary" />
           <AlertDescription className="text-sm">
             All appointments are confidential. Your information is protected under HIPAA and student privacy laws.
           </AlertDescription>
         </Alert>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -141,7 +189,6 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
                 />
               </div>
             </div>
-
             <div className="space-y-4">
               <div>
                 <Label htmlFor="time" className="text-sm font-medium">
@@ -163,7 +210,6 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label htmlFor="type" className="text-sm font-medium">
                   Appointment Type
@@ -180,7 +226,6 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-wrap gap-1">
                 <span className="text-sm font-medium">Specialties:</span>
                 {counselor.specialties.map((specialty) => (
@@ -191,48 +236,7 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
               </div>
             </div>
           </div>
-
           <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name" className="text-sm font-medium">
-                  Full Name
-                </Label>
-                <Input
-                  id="name"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="Your full name"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={studentEmail}
-                  onChange={(e) => setStudentEmail(e.target.value)}
-                  placeholder="your.email@university.edu"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="studentId" className="text-sm font-medium">
-                Student ID (Optional)
-              </Label>
-              <Input
-                id="studentId"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                placeholder="Your student ID number"
-              />
-            </div>
-
             <div>
               <Label htmlFor="reason" className="text-sm font-medium">
                 Reason for Appointment (Optional)
@@ -246,7 +250,6 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
               />
             </div>
           </div>
-
           <div className="flex space-x-3 pt-4">
             <Button
               type="button"

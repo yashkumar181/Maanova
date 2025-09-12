@@ -3,35 +3,9 @@
 import { Card } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, Users, MessageCircle, Calendar, BookOpen, AlertTriangle, Heart } from "lucide-react"
 import { useState, useEffect } from "react"
-import { collection, getFirestore, query, where, Timestamp, Firestore, getAggregateFromServer, count, onSnapshot, orderBy, getDocs } from 'firebase/firestore';
-import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, Auth, onAuthStateChanged, User } from 'firebase/auth';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-let app: FirebaseApp | undefined;
-let db: Firestore | undefined;
-let auth: Auth | undefined;
-
-try {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApp();
-  }
-  db = getFirestore(app);
-  auth = getAuth(app);
-} catch (error) {
-  console.error("Firebase initialization failed:", error);
-  console.warn("Please check your .env.local file for correct Firebase credentials.");
-}
+import { collection, query, where, Timestamp, getAggregateFromServer, count, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../lib/firebase-config'; // <-- Updated import
 
 interface OverviewMetricsProps {
   dateRange: string
@@ -54,8 +28,6 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
 
   // Use onAuthStateChanged to get the current user and their college ID
   useEffect(() => {
-    if (!auth || !db) return;
-
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
@@ -67,17 +39,16 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
             const adminDoc = querySnapshot.docs[0];
             const fetchedCollegeId = adminDoc.id;
             setCollegeId(fetchedCollegeId);
-            setLoading(false);
           } else {
             console.error("No admin document found for this user.");
-            setLoading(false);
           }
         } catch (error) {
           console.error("Error fetching admin data:", error);
-          setLoading(false);
+        } finally {
+            setLoading(false);
         }
       } else {
-        console.log("No user is signed in.");
+        // If no user, set loading to false to prevent infinite loading state
         setLoading(false);
       }
     });
@@ -87,76 +58,51 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
 
   // Fetch metrics whenever the collegeId or dateRange changes
   useEffect(() => {
-    if (!db || !collegeId || loading) return;
+    if (!db || !collegeId) return;
 
     const now = new Date();
     let startDate = new Date();
     
     switch(dateRange) {
-      case '24h':
-        startDate.setHours(now.getHours() - 24);
-        break;
-      case '7d':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(now.getDate() - 90);
-        break;
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        startDate = new Date(0); // Epoch time for all data
-        break;
+      case '24h': startDate.setHours(now.getHours() - 24); break;
+      case '7d': startDate.setDate(now.getDate() - 7); break;
+      case '30d': startDate.setDate(now.getDate() - 30); break;
+      case '90d': startDate.setDate(now.getDate() - 90); break;
+      case '1y': startDate.setFullYear(now.getFullYear() - 1); break;
+      default: startDate = new Date(0); break;
     }
     
     const startTimestamp = Timestamp.fromDate(startDate);
     
     const fetchMetrics = async () => {
       try {
-        // Fetch Active Users count
         const userQuery = query(collection(db, "students"), where("collegeId", "==", collegeId), where("lastActive", ">=", startTimestamp));
         const userSnapshot = await getAggregateFromServer(userQuery, { count: count() });
-        const activeUsersCount = userSnapshot.data().count;
 
-        // Fetch Chat Sessions count
         const chatQuery = query(collection(db, "chatSessions"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
         const chatSnapshot = await getAggregateFromServer(chatQuery, { count: count() });
-        const chatCount = chatSnapshot.data().count;
 
-        // Fetch Bookings count
         const bookingQuery = query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp));
         const bookingSnapshot = await getAggregateFromServer(bookingQuery, { count: count() });
-        const bookingCount = bookingSnapshot.data().count;
 
-        // Fetch Forum Posts count
         const forumQuery = query(collection(db, "forumPosts"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
         const forumSnapshot = await getAggregateFromServer(forumQuery, { count: count() });
-        const forumCount = forumSnapshot.data().count;
 
-        // Fetch Crisis Interventions count
         const crisisQuery = query(collection(db, "crisisEvents"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp));
         const crisisSnapshot = await getAggregateFromServer(crisisQuery, { count: count() });
-        const crisisCount = crisisSnapshot.data().count;
 
-        // Fetch Resources Accessed count (assuming a 'resourceAccessLogs' collection)
         const resourceQuery = query(collection(db, "resourceAccessLogs"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
         const resourceSnapshot = await getAggregateFromServer(resourceQuery, { count: count() });
-        const resourcesAccessedCount = resourceSnapshot.data().count;
 
-        // Update the state with the fetched data
         setMetrics({
-          activeUsers: activeUsersCount,
-          chatSessions: chatCount,
-          counselorBookings: bookingCount,
-          forumPosts: forumCount,
-          crisisInterventions: crisisCount,
-          resourcesAccessed: resourcesAccessedCount,
-          satisfactionScore: 0,
-          responseTime: 0
+          activeUsers: userSnapshot.data().count,
+          chatSessions: chatSnapshot.data().count,
+          counselorBookings: bookingSnapshot.data().count,
+          forumPosts: forumSnapshot.data().count,
+          crisisInterventions: crisisSnapshot.data().count,
+          resourcesAccessed: resourceSnapshot.data().count,
+          satisfactionScore: 0, // Placeholder
+          responseTime: 0 // Placeholder
         });
 
       } catch (error) {
@@ -165,21 +111,18 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     };
     
     fetchMetrics();
-    // Set up real-time listener for changes (optional, but good for hackathon)
-    // You would replace the interval with a listener on relevant collections
-    const intervalId = setInterval(fetchMetrics, 30000); 
-
-    return () => clearInterval(intervalId);
-  }, [db, collegeId, dateRange, loading]);
+  }, [collegeId, dateRange]);
 
 
   if (loading) {
-    return <div className="text-center p-8">Loading metrics...</div>;
+    return <div className="grid grid-cols-2 md:grid-cols-4 gap-4"> {/* Skeleton placeholder */} </div>;
   }
   
   if (!collegeId) {
-    return <div className="text-center p-8 text-red-600">Please log in to view the dashboard.</div>;
+    // This part might not be visible due to the redirect in the parent, but it's good practice.
+    return <div className="text-center p-8 text-red-600">Could not verify admin status.</div>;
   }
+
 
   const metricsDisplay = [
     {

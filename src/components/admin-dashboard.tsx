@@ -1,6 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../lib/firebase-config'; // <-- Updated import
+
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,15 +13,48 @@ import { UsageAnalytics } from "@/components/usage-analytics"
 import { CrisisTracking } from "@/components/crisis-tracking"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
+import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3, Users, AlertTriangle, Shield, TrendingUp, Download } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d")
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        // If no user is signed in, redirect to the login page
+        router.push('/login');
+      } else {
+        // User is signed in, stop loading
+        setLoading(false);
+      }
+    });
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [router]);
+
 
   const handleExportData = () => {
-    // In a real implementation, this would generate and download a report
     console.log("Exporting data for range:", dateRange)
+  }
+  
+  // While checking for a user, show a loading state
+  if (loading) {
+    return (
+      <div className="space-y-6 p-8">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
   }
 
   return (

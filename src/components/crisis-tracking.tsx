@@ -6,36 +6,9 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle, Phone, Clock, CheckCircle, Users } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useState, useEffect } from "react"
-import { collection, getDocs, getFirestore, query, where, Timestamp, Firestore, onSnapshot, getAggregateFromServer, count, orderBy } from 'firebase/firestore';
-import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
-import { getAuth, Auth, onAuthStateChanged } from 'firebase/auth';
-
-// Firebase initialization
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-let app: FirebaseApp | undefined;
-let db: Firestore | undefined;
-let auth: Auth | undefined;
-
-try {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApp();
-  }
-  db = getFirestore(app);
-  auth = getAuth(app);
-} catch (error) {
-  console.error("Firebase initialization failed:", error);
-  console.warn("Please check your .env.local file for correct Firebase credentials.");
-}
+import { collection, getDocs, query, where, Timestamp, onSnapshot, orderBy } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../lib/firebase-config'; // <-- Updated import
 
 interface CrisisTrackingProps {
   dateRange: string
@@ -56,10 +29,7 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
   const [loading, setLoading] = useState(true);
   const [collegeId, setCollegeId] = useState<string | null>(null);
 
-  // Use onAuthStateChanged to get the current user's college ID
   useEffect(() => {
-    if (!auth || !db) return;
-
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
@@ -69,50 +39,31 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
           
           if (!querySnapshot.empty) {
             const adminDoc = querySnapshot.docs[0];
-            const fetchedCollegeId = adminDoc.id;
-            setCollegeId(fetchedCollegeId);
+            setCollegeId(adminDoc.id);
           } else {
             console.error("No admin document found for this user.");
           }
         } catch (error) {
           console.error("Error fetching admin data:", error);
         }
-      } else {
-        console.log("No user is signed in.");
       }
     });
-
     return () => unsubscribeAuth();
-  }, [auth, db]);
+  }, []);
 
-  // Use onSnapshot to fetch and listen for real-time crisis data
   useEffect(() => {
-    if (!db || !collegeId) return;
-    
+    if (!collegeId) return;
     setLoading(true);
 
     const now = new Date();
     let startDate = new Date();
-    
     switch(dateRange) {
-      case '24h':
-        startDate.setHours(now.getHours() - 24);
-        break;
-      case '7d':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case '90d':
-        startDate.setDate(now.getDate() - 90);
-        break;
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        startDate = new Date(0);
-        break;
+        case '24h': startDate.setHours(now.getHours() - 24); break;
+        case '7d': startDate.setDate(now.getDate() - 7); break;
+        case '30d': startDate.setDate(now.getDate() - 30); break;
+        case '90d': startDate.setDate(now.getDate() - 90); break;
+        case '1y': startDate.setFullYear(now.getFullYear() - 1); break;
+        default: startDate = new Date(0); break;
     }
 
     const q = query(
@@ -123,14 +74,11 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const events: CrisisEvent[] = [];
-      snapshot.forEach((doc) => {
-        events.push({
+      const events: CrisisEvent[] = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           timestamp: doc.data().timestamp.toDate()
-        } as CrisisEvent);
-      });
+      } as CrisisEvent));
       setCrisisEvents(events);
       setLoading(false);
     }, (error) => {
@@ -139,7 +87,8 @@ export function CrisisTracking({ dateRange }: CrisisTrackingProps) {
     });
 
     return () => unsubscribe();
-  }, [db, collegeId, dateRange]);
+  }, [collegeId, dateRange]);
+
 
   const totalInterventions = crisisEvents.length;
   const resolvedEvents = crisisEvents.filter(event => event.status === 'resolved');

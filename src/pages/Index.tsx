@@ -59,14 +59,17 @@ const Index = () => {
 
           {/* Login Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-20 animate-slide-up">
-            <Button 
+            <a href="https://mental-health-platform-eosin.vercel.app/">
+              <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"
             >
               <UserCheck className="mr-2 h-5 w-5" />
-              Student Login
+              Student Access
             </Button>
-            <Button 
+            </a>
+            <a href="">
+              <Button 
               variant="outline" 
               size="lg"
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"
@@ -74,6 +77,7 @@ const Index = () => {
               <ShieldCheck className="mr-2 h-5 w-5" />
               Admin Login
             </Button>
+            </a>
           </div>
         </div>
       </section>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebase-config'; // <-- Updated import
+import { auth } from '../lib/firebase-config';
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,8 +14,13 @@ import { CrisisTracking } from "@/components/crisis-tracking"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, Users, AlertTriangle, Shield, TrendingUp, Download } from "lucide-react"
+import { BarChart3, Users, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, Users2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+
+// Import the new components we will create
+import { CounselorManagement } from './counselor-management';
+import { AppointmentViewer } from './appointment-viewer';
+
 
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d")
@@ -25,14 +30,11 @@ export function AdminDashboard() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        // If no user is signed in, redirect to the login page
         router.push('/login');
       } else {
-        // User is signed in, stop loading
         setLoading(false);
       }
     });
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
 
@@ -41,16 +43,12 @@ export function AdminDashboard() {
     console.log("Exporting data for range:", dateRange)
   }
   
-  // While checking for a user, show a loading state
   if (loading) {
     return (
       <div className="space-y-6 p-8">
         <Skeleton className="h-16 w-full" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" />
         </div>
         <Skeleton className="h-96 w-full" />
       </div>
@@ -59,16 +57,13 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Privacy Notice */}
       <Alert className="border-primary/20 bg-primary/5">
         <Shield className="h-4 w-4 text-primary" />
         <AlertDescription className="text-sm">
-          All data displayed is anonymized and aggregated to protect student privacy. Individual user information is
-          never displayed or stored in identifiable formats.
+          All data displayed is anonymized and aggregated to protect student privacy.
         </AlertDescription>
       </Alert>
 
-      {/* Date Range Selector */}
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -78,11 +73,9 @@ export function AdminDashboard() {
               onChange={(e) => setDateRange(e.target.value)}
               className="px-3 py-1 border border-border rounded-md text-sm bg-background"
             >
-              <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
-              <option value="1y">Last Year</option>
             </select>
           </div>
           <Button onClick={handleExportData} variant="outline" className="bg-transparent">
@@ -92,90 +85,38 @@ export function AdminDashboard() {
         </div>
       </Card>
 
-      {/* Overview Metrics */}
       <OverviewMetrics dateRange={dateRange} />
 
-      {/* Detailed Analytics Tabs */}
+      {/* MODIFIED: Added two new tabs and adjusted grid columns */}
       <Tabs defaultValue="usage" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="usage" className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Usage</span>
-          </TabsTrigger>
-          <TabsTrigger value="trends" className="flex items-center space-x-2">
-            <TrendingUp className="h-4 w-4" />
-            <span>Trends</span>
-          </TabsTrigger>
-          <TabsTrigger value="crisis" className="flex items-center space-x-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Crisis</span>
-          </TabsTrigger>
-          <TabsTrigger value="moderation" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
-            <span>Moderation</span>
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>Users</span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
+          <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
+          <TabsTrigger value="crisis"><AlertTriangle className="mr-2 h-4 w-4" />Crisis</TabsTrigger>
+          <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
+          <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
+          <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counsellors</TabsTrigger>
+          <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Users</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="usage" className="mt-6">
-          <UsageAnalytics dateRange={dateRange} />
-        </TabsContent>
-
-        <TabsContent value="trends" className="mt-6">
-          <TrendAnalysis dateRange={dateRange} />
-        </TabsContent>
-
-        <TabsContent value="crisis" className="mt-6">
-          <CrisisTracking dateRange={dateRange} />
-        </TabsContent>
-
-        <TabsContent value="moderation" className="mt-6">
-          <ModerationTools />
-        </TabsContent>
+        <TabsContent value="usage" className="mt-6"><UsageAnalytics dateRange={dateRange} /></TabsContent>
+        <TabsContent value="trends" className="mt-6"><TrendAnalysis dateRange={dateRange} /></TabsContent>
+        <TabsContent value="crisis" className="mt-6"><CrisisTracking dateRange={dateRange} /></TabsContent>
+        <TabsContent value="moderation" className="mt-6"><ModerationTools /></TabsContent>
+        
+        {/* NEW: Content for the new tabs */}
+        <TabsContent value="appointments" className="mt-6"><AppointmentViewer /></TabsContent>
+        <TabsContent value="counselors" className="mt-6"><CounselorManagement /></TabsContent>
 
         <TabsContent value="users" className="mt-6">
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">User Demographics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm">Undergraduate</span>
-                  <span className="text-sm font-medium">78%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Graduate</span>
-                  <span className="text-sm font-medium">18%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Faculty/Staff</span>
-                  <span className="text-sm font-medium">4%</span>
-                </div>
-              </div>
+              {/* Placeholder Content */}
             </Card>
-
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Platform Satisfaction</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm">Very Satisfied</span>
-                  <span className="text-sm font-medium">45%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Satisfied</span>
-                  <span className="text-sm font-medium">38%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Neutral</span>
-                  <span className="text-sm font-medium">12%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Needs Improvement</span>
-                  <span className="text-sm font-medium">5%</span>
-                </div>
-              </div>
+              {/* Placeholder Content */}
             </Card>
           </div>
         </TabsContent>

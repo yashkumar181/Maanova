@@ -66,13 +66,28 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
 
     const fetchData = async () => {
       setLoading(true);
-      let startDate = new Date();
-      switch (dateRange) {
-        case '24h': startDate.setHours(startDate.getHours() - 24); break;
-        case '7d': startDate.setDate(startDate.getDate() - 7); break;
-        case '30d': startDate.setDate(startDate.getDate() - 30); break;
-        default: startDate.setDate(startDate.getDate() - 7); break;
-      }
+
+      // FIX 1: Use a helper function to calculate the start date, allowing us to use 'const'
+      const getStartDate = (): Date => {
+        const date = new Date();
+        switch (dateRange) {
+          case '24h':
+            date.setHours(date.getHours() - 24);
+            break;
+          case '7d':
+            date.setDate(date.getDate() - 7);
+            break;
+          case '30d':
+            date.setDate(date.getDate() - 30);
+            break;
+          default:
+            date.setDate(date.getDate() - 7);
+            break;
+        }
+        return date;
+      };
+      
+      const startDate = getStartDate();
       const startTimestamp = Timestamp.fromDate(startDate);
 
       try {
@@ -100,7 +115,6 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
         const dailyData: { [key: string]: DailyUsage } = {};
         const hourlyData: { [key: string]: { hour: string, usage: number } } = {};
 
-        // THE FIX IS HERE: We add 'as AnalyticsDoc' to each item to satisfy TypeScript
         const allDocs: AnalyticsDoc[] = [
             ...chatSnap.docs.map(d => ({ ...d.data(), type: 'chatSessions' } as AnalyticsDoc)),
             ...bookingSnap.docs.map(d => ({ ...d.data(), type: 'bookings' } as AnalyticsDoc)),
@@ -117,7 +131,12 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
             const hour = date.getHours();
 
             if (!dailyData[day]) dailyData[day] = { day, chatSessions: 0, bookings: 0, resources: 0, forum: 0 };
-            (dailyData[day] as any)[doc.type]++; 
+            
+            // FIX 2: Replace 'as any' with a type-safe key to satisfy the linter
+            const key = doc.type as keyof Omit<DailyUsage, 'day'>;
+            if (key in dailyData[day]) {
+                dailyData[day][key]++;
+            }
             
             const hourKey = `${hour}:00`;
             if (!hourlyData[hourKey]) hourlyData[hourKey] = { hour: hourKey, usage: 0 };
@@ -133,8 +152,12 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
           { name: "Forum", value: forumSnap.size, color: "#a855f7" },
         ]);
 
-      } catch (error) {
-        console.error("Error fetching usage analytics:", error);
+      } catch (error: unknown) { // Also make the catch block type-safe
+        if (error instanceof Error) {
+            console.error("Error fetching usage analytics:", error.message);
+        } else {
+            console.error("An unknown error occurred while fetching usage analytics:", error);
+        }
       } finally {
         setLoading(false);
       }
@@ -185,7 +208,8 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
           <h3 className="text-lg font-semibold mb-4">Feature Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie
+              
+<Pie
   data={featureUsage}
   cx="50%"
   cy="50%"

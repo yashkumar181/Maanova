@@ -13,31 +13,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { OverviewMetrics } from "@/components/overview-metrics"
 import { UsageAnalytics } from "@/components/usage-analytics"
-import { CrisisTracking } from "@/components/crisis-tracking"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, Users2, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut } from "lucide-react"
+import { BarChart3, Users2, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { CounselorManagement } from './counselor-management';
 import { AppointmentViewer } from './appointment-viewer';
 import { ResourceManagement } from "./resource-management";
 
-// --- THIS IS THE FIX ---
-// Create a specific interface for the admin data
 interface AdminData extends DocumentData {
   id: string;
   username: string;
   gmail: string;
   collegeName: string;
 }
-// --------------------
 
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d")
   const [loading, setLoading] = useState(true);
-  // Use the new AdminData interface instead of 'any'
   const [adminData, setAdminData] = useState<AdminData | null>(null);
   const router = useRouter();
 
@@ -71,7 +66,7 @@ export function AdminDashboard() {
     return (
       <div className="space-y-6 p-8">
         <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /></div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6"><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /></div>
         <Skeleton className="h-96 w-full" />
       </div>
     );
@@ -84,23 +79,13 @@ export function AdminDashboard() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback>{adminData.username?.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <Avatar className="h-10 w-10"><AvatarFallback>{adminData.username?.charAt(0).toUpperCase()}</AvatarFallback></Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{adminData.username}</p>
-                <p className="text-xs leading-none text-muted-foreground">{adminData.gmail}</p>
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuLabel className="font-normal"><div className="flex flex-col space-y-1"><p className="text-sm font-medium leading-none">{adminData.username}</p><p className="text-xs leading-none text-muted-foreground">{adminData.gmail}</p></div></DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="font-normal">
-                <p className="text-xs text-muted-foreground">College: {adminData.collegeName}</p>
-                <p className="text-xs text-muted-foreground">ID: {adminData.id}</p>
-            </DropdownMenuLabel>
+            <DropdownMenuLabel className="font-normal"><p className="text-xs text-muted-foreground">College: {adminData.collegeName}</p><p className="text-xs text-muted-foreground">ID: {adminData.id}</p></DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Sign Out</span></DropdownMenuItem>
           </DropdownMenuContent>
@@ -109,40 +94,30 @@ export function AdminDashboard() {
       
       <Alert className="border-primary/20 bg-primary/5">
         <Shield className="h-4 w-4 text-primary" />
-        <AlertDescription className="text-sm">
-          All data displayed is anonymized and aggregated to protect student privacy.
-        </AlertDescription>
+        <AlertDescription className="text-sm">All data displayed is anonymized and aggregated to protect student privacy.</AlertDescription>
       </Alert>
 
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium">Time Period:</span>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="px-3 py-1 border border-border rounded-md text-sm bg-background"
-            >
+            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-3 py-1 border border-border rounded-md text-sm bg-background">
               <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
-              <option value="90d">Last 90 Days</option>
             </select>
           </div>
-          <Button onClick={() => console.log("Exporting...")} variant="outline" className="bg-transparent">
-            <Download className="mr-2 h-4 w-4" />
-            Export Report
-          </Button>
+          <Button onClick={() => console.log("Exporting...")} variant="outline" className="bg-transparent"><Download className="mr-2 h-4 w-4" />Export Report</Button>
         </div>
       </Card>
 
       <OverviewMetrics dateRange={dateRange} />
 
+      {/* --- CHANGE 1: REMOVED THE "CRISIS" TAB --- */}
       <Tabs defaultValue="usage" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
           <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
-          <TabsTrigger value="crisis"><AlertTriangle className="mr-2 h-4 w-4" />Crisis</TabsTrigger>
           <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
           <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
           <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counsellors</TabsTrigger>
@@ -151,7 +126,6 @@ export function AdminDashboard() {
 
         <TabsContent value="usage" className="mt-6"><UsageAnalytics dateRange={dateRange} /></TabsContent>
         <TabsContent value="trends" className="mt-6"><TrendAnalysis dateRange={dateRange} /></TabsContent>
-        <TabsContent value="crisis" className="mt-6"><CrisisTracking dateRange={dateRange} /></TabsContent>
         <TabsContent value="moderation" className="mt-6"><ModerationTools /></TabsContent>
         <TabsContent value="appointments" className="mt-6"><AppointmentViewer /></TabsContent>
         <TabsContent value="counselors" className="mt-6"><CounselorManagement /></TabsContent>

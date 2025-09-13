@@ -14,13 +14,13 @@ import { CrisisTracking } from "@/components/crisis-tracking"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, Users, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, Users2 } from "lucide-react"
+import { BarChart3, Users, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, Users2, BookOpen } from "lucide-react" // Added BookOpen icon
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-// Import the new components we will create
+// Import the existing and new components
 import { CounselorManagement } from './counselor-management';
 import { AppointmentViewer } from './appointment-viewer';
-
+import { ResourceManagement } from './resource-management';
 
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d")
@@ -37,7 +37,6 @@ export function AdminDashboard() {
     });
     return () => unsubscribe();
   }, [router]);
-
 
   const handleExportData = () => {
     console.log("Exporting data for range:", dateRange)
@@ -87,15 +86,16 @@ export function AdminDashboard() {
 
       <OverviewMetrics dateRange={dateRange} />
 
-      {/* MODIFIED: Added two new tabs and adjusted grid columns */}
+      {/* MODIFIED: Adjusted grid columns to accommodate the new tab */}
       <Tabs defaultValue="usage" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
           <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
           <TabsTrigger value="crisis"><AlertTriangle className="mr-2 h-4 w-4" />Crisis</TabsTrigger>
           <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
           <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
           <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counsellors</TabsTrigger>
+          <TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger> {/* <-- NEW TAB */}
           <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Users</TabsTrigger>
         </TabsList>
 
@@ -103,11 +103,9 @@ export function AdminDashboard() {
         <TabsContent value="trends" className="mt-6"><TrendAnalysis dateRange={dateRange} /></TabsContent>
         <TabsContent value="crisis" className="mt-6"><CrisisTracking dateRange={dateRange} /></TabsContent>
         <TabsContent value="moderation" className="mt-6"><ModerationTools /></TabsContent>
-        
-        {/* NEW: Content for the new tabs */}
         <TabsContent value="appointments" className="mt-6"><AppointmentViewer /></TabsContent>
         <TabsContent value="counselors" className="mt-6"><CounselorManagement /></TabsContent>
-
+        <TabsContent value="resources" className="mt-6"><ResourceManagement /></TabsContent> {/* <-- NEW CONTENT */}
         <TabsContent value="users" className="mt-6">
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="p-6">
@@ -124,3 +122,4 @@ export function AdminDashboard() {
     </div>
   )
 }
+

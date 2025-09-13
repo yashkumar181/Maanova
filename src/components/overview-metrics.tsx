@@ -1,11 +1,12 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Users, MessageCircle, Calendar, BookOpen, AlertTriangle, Heart } from "lucide-react"
+import { TrendingUp, Users, MessageCircle, Calendar, BookOpen, AlertTriangle } from "lucide-react"
 import { useState, useEffect } from "react"
-import { collection, query, where, Timestamp, getAggregateFromServer, count, getDocs } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../lib/firebase-config'; // <-- Updated import
+import { collection, query, where, Timestamp, getDocs, onSnapshot } from 'firebase/firestore'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth, db } from '../lib/firebase-config'
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface OverviewMetricsProps {
   dateRange: string
@@ -19,200 +20,111 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     resourcesAccessed: 0,
     forumPosts: 0,
     crisisInterventions: 0,
-    satisfactionScore: 0,
-    responseTime: 0
   });
-
-  const [collegeId, setCollegeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [collegeId, setCollegeId] = useState<string | null>(null);
 
-  // Use onAuthStateChanged to get the current user and their college ID
+  // Get the current admin's college ID
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        try {
-          const adminDocRef = collection(db, "admins");
-          const q = query(adminDocRef, where("uid", "==", user.uid));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            const adminDoc = querySnapshot.docs[0];
-            const fetchedCollegeId = adminDoc.id;
-            setCollegeId(fetchedCollegeId);
-          } else {
-            console.error("No admin document found for this user.");
-          }
-        } catch (error) {
-          console.error("Error fetching admin data:", error);
-        } finally {
-            setLoading(false);
+        const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid));
+        const adminSnapshot = await getDocs(adminQuery);
+        if (!adminSnapshot.empty) {
+          setCollegeId(adminSnapshot.docs[0].id);
+        } else {
+          setLoading(false);
         }
       } else {
-        // If no user, set loading to false to prevent infinite loading state
         setLoading(false);
       }
     });
-
     return () => unsubscribeAuth();
   }, []);
 
-  // Fetch metrics whenever the collegeId or dateRange changes
+  // Set up live listeners for all metrics
   useEffect(() => {
-    if (!db || !collegeId) return;
+    if (!collegeId) return;
 
-    const now = new Date();
-    let startDate = new Date();
-    
-    switch(dateRange) {
-      case '24h': startDate.setHours(now.getHours() - 24); break;
-      case '7d': startDate.setDate(now.getDate() - 7); break;
-      case '30d': startDate.setDate(now.getDate() - 30); break;
-      case '90d': startDate.setDate(now.getDate() - 90); break;
-      case '1y': startDate.setFullYear(now.getFullYear() - 1); break;
-      default: startDate = new Date(0); break;
-    }
-    
-    const startTimestamp = Timestamp.fromDate(startDate);
-    
-    const fetchMetrics = async () => {
-      try {
-        const userQuery = query(collection(db, "students"), where("collegeId", "==", collegeId), where("lastActive", ">=", startTimestamp));
-        const userSnapshot = await getAggregateFromServer(userQuery, { count: count() });
-
-        const chatQuery = query(collection(db, "chatSessions"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
-        const chatSnapshot = await getAggregateFromServer(chatQuery, { count: count() });
-
-        const bookingQuery = query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp));
-        const bookingSnapshot = await getAggregateFromServer(bookingQuery, { count: count() });
-
-        const forumQuery = query(collection(db, "forumPosts"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
-        const forumSnapshot = await getAggregateFromServer(forumQuery, { count: count() });
-
-        const crisisQuery = query(collection(db, "crisisEvents"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp));
-        const crisisSnapshot = await getAggregateFromServer(crisisQuery, { count: count() });
-
-        const resourceQuery = query(collection(db, "resourceAccessLogs"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp));
-        const resourceSnapshot = await getAggregateFromServer(resourceQuery, { count: count() });
-
-        setMetrics({
-          activeUsers: userSnapshot.data().count,
-          chatSessions: chatSnapshot.data().count,
-          counselorBookings: bookingSnapshot.data().count,
-          forumPosts: forumSnapshot.data().count,
-          crisisInterventions: crisisSnapshot.data().count,
-          resourcesAccessed: resourceSnapshot.data().count,
-          satisfactionScore: 0, // Placeholder
-          responseTime: 0 // Placeholder
-        });
-
-      } catch (error) {
-        console.error("Error fetching dashboard metrics:", error);
+    setLoading(true); // Ensure loading state is true at the start of a fetch
+    const getStartDate = (): Date => {
+      const date = new Date();
+      switch (dateRange) {
+        case '24h': date.setHours(date.getHours() - 24); break;
+        case '7d': date.setDate(date.getDate() - 7); break;
+        case '30d': date.setDate(date.getDate() - 30); break;
+        default: date.setDate(date.getDate() - 7); break;
       }
+      return date;
     };
     
-    fetchMetrics();
+    const startDate = getStartDate();
+    const startTimestamp = Timestamp.fromDate(startDate);
+
+    const queries = {
+      activeUsers: query(collection(db, "students"), where("collegeId", "==", collegeId), where("lastActive", ">=", startTimestamp)),
+      chatSessions: query(collection(db, "chatSessions"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
+      bookings: query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp)),
+      resources: query(collection(db, "resourceAccessLogs"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
+      forum: query(collection(db, "forumPosts"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
+      crisis: query(collection(db, "crisisEvents"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp)),
+    };
+
+    const unsubscribers = [
+      onSnapshot(queries.activeUsers, (snapshot) => setMetrics(prev => ({ ...prev, activeUsers: snapshot.size }))),
+      onSnapshot(queries.chatSessions, (snapshot) => setMetrics(prev => ({ ...prev, chatSessions: snapshot.size }))),
+      onSnapshot(queries.bookings, (snapshot) => setMetrics(prev => ({ ...prev, counselorBookings: snapshot.size }))),
+      onSnapshot(queries.resources, (snapshot) => setMetrics(prev => ({ ...prev, resourcesAccessed: snapshot.size }))),
+      onSnapshot(queries.forum, (snapshot) => setMetrics(prev => ({ ...prev, forumPosts: snapshot.size }))),
+      onSnapshot(queries.crisis, (snapshot) => setMetrics(prev => ({ ...prev, crisisInterventions: snapshot.size }))),
+    ];
+
+    setLoading(false);
+    return () => unsubscribers.forEach(unsub => unsub());
   }, [collegeId, dateRange]);
 
-
-  if (loading) {
-    return <div className="grid grid-cols-2 md:grid-cols-4 gap-4"> {/* Skeleton placeholder */} </div>;
-  }
-  
-  if (!collegeId) {
-    // This part might not be visible due to the redirect in the parent, but it's good practice.
-    return <div className="text-center p-8 text-red-600">Could not verify admin status.</div>;
-  }
-
-
-  const metricsDisplay = [
-    {
-      title: "Chat Sessions",
-      value: metrics.chatSessions.toString(),
-      change: "+8%", // Mock
-      trend: "up",
-      icon: MessageCircle,
-      description: "AI chatbot interactions",
-    },
-    {
-      title: "Counselor Bookings",
-      value: metrics.counselorBookings.toString(),
-      change: "+23%", // Mock
-      trend: "up",
-      icon: Calendar,
-      description: "Appointments scheduled",
-    },
-    {
-      title: "Forum Posts",
-      value: metrics.forumPosts.toString(),
-      change: "-5%", // Mock
-      trend: "down",
-      icon: MessageCircle,
-      description: "New peer support discussions",
-    },
-    {
-      title: "Crisis Interventions",
-      value: metrics.crisisInterventions.toString(),
-      change: "+2", // Mock
-      trend: "up",
-      icon: AlertTriangle,
-      description: "Emergency support provided",
-    },
-    {
-        title: "Active Users",
-        value: metrics.activeUsers.toLocaleString(),
-        change: "+12%", // Mock
-        trend: "up",
-        icon: Users,
-        description: "Students using the platform",
-      },
-      {
-        title: "Resources Accessed",
-        value: metrics.resourcesAccessed.toLocaleString(),
-        change: "+15%", // Mock
-        trend: "up",
-        icon: BookOpen,
-        description: "Videos, articles, and guides viewed",
-      },
-      {
-        title: "Satisfaction Score",
-        value: "4.6/5",
-        change: "+0.2",
-        trend: "up",
-        icon: Heart,
-        description: "Average user rating",
-      },
-      {
-        title: "Response Time",
-        value: "2.3min",
-        change: "-15%",
-        trend: "down",
-        icon: TrendingUp,
-        description: "Average support response time",
-      },
+  const metricDisplayData = [
+    { title: "Active Users", value: metrics.activeUsers, icon: Users, description: "Students using the platform", change: "+12%" },
+    { title: "Chat Sessions", value: metrics.chatSessions, icon: MessageCircle, description: "AI chatbot interactions", change: "+8%" },
+    { title: "Counselor Bookings", value: metrics.counselorBookings, icon: Calendar, description: "Appointments scheduled", change: "+23%" },
+    { title: "Resources Accessed", value: metrics.resourcesAccessed, icon: BookOpen, description: "Guides and articles viewed", change: "+15%" },
+    { title: "Forum Posts", value: metrics.forumPosts, icon: MessageCircle, description: "New peer support discussions", change: "+5%" },
+    { title: "Crisis Interventions", value: metrics.crisisInterventions, icon: AlertTriangle, description: "Emergency support provided", change: "+2" },
   ];
 
+  if (loading) {
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+                <Card key={index} className="p-6 space-y-2">
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-3/4" />
+                </Card>
+            ))}
+        </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {metricsDisplay.map((metric) => (
-        <Card key={metric.title} className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <metric.icon className="h-5 w-5 text-primary" />
-            <div className={`flex items-center text-xs ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`}>
-              {metric.trend === "up" ? (
-                <TrendingUp className="h-3 w-3 mr-1" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1" />
-              )}
-              {metric.change}
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+      {metricDisplayData.map((metric) => (
+        <Card key={metric.title} className="p-6">
+            <div className="flex items-center justify-between mb-4">
+                <metric.icon className="h-6 w-6 text-muted-foreground" />
+                <div className="flex items-center text-sm font-medium text-green-600">
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    {metric.change}
+                </div>
             </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold">{metric.value}</p>
-            <p className="text-xs text-muted-foreground">{metric.title}</p>
-            <p className="text-xs text-muted-foreground">{metric.description}</p>
-          </div>
+            <div className="space-y-1">
+                <p className="text-3xl font-bold">{metric.value}</p>
+                <p className="text-sm font-medium text-foreground">{metric.title}</p>
+                <p className="text-xs text-muted-foreground">{metric.description}</p>
+            </div>
         </Card>
       ))}
     </div>
   )
 }
+

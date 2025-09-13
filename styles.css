@@ -432,3 +432,7 @@ body {
     border-radius: 0;
   }
 }
+
+.bpComposerFooter {
+  display: none !important;
+}

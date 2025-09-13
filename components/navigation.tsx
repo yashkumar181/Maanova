@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { User, onAuthStateChanged, signOut } from "firebase/auth"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore" // <-- NEW: Import serverTimestamp and updateDoc
 import { auth, db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon } from "lucide-react"
@@ -12,7 +12,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ThemeToggle from "@/components/ThemeToggle"
 
-// Define a specific type for student data for better type safety
 interface StudentData {
   username: string;
   email: string;
@@ -32,6 +31,17 @@ export function Navigation() {
         const studentSnap = await getDoc(studentDocRef)
         if (studentSnap.exists()) {
           setStudentData(studentSnap.data() as StudentData)
+          
+          // --- THIS IS THE FIX ---
+          // Update the lastActive timestamp every time the user's session is active.
+          try {
+            await updateDoc(studentDocRef, {
+              lastActive: serverTimestamp(),
+            });
+          } catch (error) {
+            console.error("Error updating lastActive timestamp:", error);
+          }
+          // --------------------------
         }
       } else {
         setUser(null)

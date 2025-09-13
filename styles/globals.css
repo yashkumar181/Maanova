@@ -125,3 +125,7 @@
 html, body, button, input, textarea, select {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+.bpw-composer-footer {
+  display: none !important;
+}

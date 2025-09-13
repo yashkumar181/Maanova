@@ -1,72 +1,57 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { doc, getDoc, DocumentData } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Heart,
-  MessageCircle,
-  Calendar,
-  BookOpen,
-  Users,
-  LogOut,
-  LayoutDashboard,
-} from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton"; // <-- CORRECTED IMPORT PATH
-import ThemeToggle from "@/components/ThemeToggle";
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { onAuthStateChanged, signOut } from "firebase/auth"
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore"
+import { auth, db } from "@/lib/firebase"
+import { Button } from "@/components/ui/button"
+import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, LayoutDashboard, User as UserIcon } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton" // <-- THE FIX IS HERE
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import ThemeToggle from "@/components/ThemeToggle"
 
 export function Navigation() {
-  const [user, setUser] = useState<User | null>(null);
-  const [studentData, setStudentData] = useState<DocumentData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any | null>(null)
+  const [studentData, setStudentData] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-        // Fetch student data from Firestore
-        const studentDocRef = doc(db, "students", currentUser.uid);
-        const docSnap = await getDoc(studentDocRef);
-        if (docSnap.exists()) {
-          setStudentData(docSnap.data());
+        setUser(currentUser)
+        const studentDocRef = doc(db, "students", currentUser.uid)
+        const studentSnap = await getDoc(studentDocRef)
+        if (studentSnap.exists()) {
+          setStudentData(studentSnap.data())
+          // --- THIS IS THE NEW LOGIC ---
+          // Update the lastActive timestamp whenever the user is confirmed to be logged in.
+          // This doesn't need to happen on every click, just once per session is enough.
+          await updateDoc(studentDocRef, {
+            lastActive: serverTimestamp(),
+          })
+          // --------------------------
         }
       } else {
-        setUser(null);
-        setStudentData(null);
+        setUser(null)
+        setStudentData(null)
       }
-      setLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
+      setLoading(false)
+    })
+    return () => unsubscribe()
+  }, [])
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth)
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Error signing out:", error)
     }
-  };
-
-  const getInitials = (name: string = "") => {
-    return name.charAt(0).toUpperCase() || "?";
-  };
+  }
 
   return (
-    <nav className="bg-card border-b border-border sticky top-0 z-50">
+    <nav className="bg-card border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-2">
@@ -84,48 +69,40 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <ThemeToggle />
             {loading ? (
-                <Skeleton className="h-8 w-24 rounded-md" />
-            ) : user ? (
+              <Skeleton className="h-10 w-10 rounded-full" />
+            ) : user && studentData ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      {/* Add AvatarImage if you store profile pictures */}
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {getInitials(studentData?.username)}
-                      </AvatarFallback>
+                      <AvatarImage src="/placeholder.svg" alt={studentData.username} />
+                      <AvatarFallback>{studentData.username?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{studentData?.username}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      <p className="text-sm font-medium leading-none">{studentData.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{studentData.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => window.location.href = '/profile'}>
-                     <LayoutDashboard className="mr-2 h-4 w-4" />
-                     <span>Profile</span>
-                  </DropdownMenuItem>
+                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" /><span>Profile</span></DropdownMenuItem></Link>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Sign Out</span></DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="hidden md:flex items-center space-x-2">
-                <Button variant="outline" asChild><Link href="/login">Login</Link></Button>
-                <Button asChild><Link href="/register">Register</Link></Button>
+              <div className="space-x-2">
+                <Link href="/login"><Button variant="ghost">Login</Button></Link>
+                <Link href="/register"><Button>Register</Button></Link>
               </div>
             )}
           </div>
         </div>
       </div>
     </nav>
-  );
+  )
 }
 

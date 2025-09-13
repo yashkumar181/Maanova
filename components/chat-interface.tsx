@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -9,6 +8,12 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, Bot, User, AlertCircle, Phone } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+
+// --- NEW IMPORTS ---
+import { onAuthStateChanged } from "firebase/auth"
+import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore"
+import { auth, db } from "@/lib/firebase"
+// -------------------
 
 interface Message {
     id: string
@@ -31,6 +36,30 @@ export function ChatInterface() {
     ])
     const [inputValue, setInputValue] = useState("")
     const [isTyping, setIsTyping] = useState(false)
+    
+    // --- NEW STATE VARIABLES ---
+    const [userUid, setUserUid] = useState<string | null>(null)
+    const [collegeId, setCollegeId] = useState<string | null>(null)
+    // ---------------------------
+
+    // --- NEW useEffect TO GET USER DATA ---
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                setUserUid(user.uid)
+                const studentDocRef = doc(db, "students", user.uid)
+                const studentSnap = await getDoc(studentDocRef)
+                if (studentSnap.exists()) {
+                    setCollegeId(studentSnap.data().collegeId)
+                }
+            } else {
+                setUserUid(null)
+                setCollegeId(null)
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+    // -------------------------------------
 
     // This hook handles the scrolling of the chat window
     useEffect(() => {
@@ -40,28 +69,23 @@ export function ChatInterface() {
         }
     }, [messages, isTyping])
 
-    // This function now makes the API call to your Node.js backend
     const generateBotResponse = async (userMessage: string) => {
-        // Change the URL here to the specific address of your backend
-       const apiUrl = "/api/chat";
+        const apiUrl = "/api/chat";
         try {
             const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userMessage }),
             })
-
-            if (!response.ok) {
-                throw new Error("Network response was not ok")
-            }
-
+            if (!response.ok) throw new Error("Network response was not ok")
+            
             const data = await response.json()
             const botResponse: Message = {
                 id: Date.now().toString(),
                 content: data.response,
                 sender: "bot",
                 timestamp: new Date(),
-                type: data.type, // We now use the 'type' field from the backend
+                type: data.type,
             }
             setMessages((prev) => [...prev, botResponse])
         } catch (error) {
@@ -82,6 +106,14 @@ export function ChatInterface() {
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isTyping) return
 
+        // --- MODIFICATION: CHECK FOR USER ---
+        if (!userUid || !collegeId) {
+            // This can be replaced with a more user-friendly toast notification
+            alert("You must be logged in to use the chat.");
+            return;
+        }
+        // ------------------------------------
+
         const userMessage: Message = {
             id: Date.now().toString(),
             content: inputValue,
@@ -90,11 +122,26 @@ export function ChatInterface() {
         }
 
         setMessages((prev) => [...prev, userMessage])
+        const messageToSend = inputValue; // Capture value before clearing
         setInputValue("")
         setIsTyping(true)
 
-        // Call the async function that talks to the backend
-        generateBotResponse(inputValue)
+        // --- NEW LOGIC: SAVE TO FIREBASE ---
+        try {
+            await addDoc(collection(db, "chatSessions"), {
+                studentUid: userUid,
+                collegeId: collegeId,
+                content: messageToSend,
+                sender: "user",
+                timestamp: serverTimestamp(),
+                // You can add other metadata here if needed
+            });
+        } catch (error) {
+            console.error("Error saving chat message:", error);
+        }
+        // ------------------------------------
+
+        generateBotResponse(messageToSend)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -174,7 +221,7 @@ export function ChatInterface() {
                                                     size="sm"
                                                     variant="outline"
                                                     className="border-accent text-accent hover:bg-accent/10 bg-transparent"
-                                                    onClick={() => window.location.href = "/booking.html"}
+                                                    onClick={() => window.location.href = "/booking"}
                                                 >
                                                     Book Counselor Appointment
                                                 </Button>

@@ -3,31 +3,42 @@
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { auth, db } from '../lib/firebase-config';
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { OverviewMetrics } from "@/components/overview-metrics"
 import { UsageAnalytics } from "@/components/usage-analytics"
 import { CrisisTracking } from "@/components/crisis-tracking"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, Users2, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut, User as UserIcon } from "lucide-react"
+import { BarChart3, Users2, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { CounselorManagement } from './counselor-management';
 import { AppointmentViewer } from './appointment-viewer';
 import { ResourceManagement } from "./resource-management";
 
+// --- THIS IS THE FIX ---
+// Create a specific interface for the admin data
+interface AdminData extends DocumentData {
+  id: string;
+  username: string;
+  gmail: string;
+  collegeName: string;
+}
+// --------------------
+
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d")
   const [loading, setLoading] = useState(true);
-  const [adminData, setAdminData] = useState<any | null>(null);
+  // Use the new AdminData interface instead of 'any'
+  const [adminData, setAdminData] = useState<AdminData | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -35,11 +46,11 @@ export function AdminDashboard() {
       if (!user) {
         router.push('/login');
       } else {
-        // Fetch admin data for the profile dropdown
         const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid));
         const adminSnapshot = await getDocs(adminQuery);
         if (!adminSnapshot.empty) {
-          setAdminData({ id: adminSnapshot.docs[0].id, ...adminSnapshot.docs[0].data() });
+          const doc = adminSnapshot.docs[0];
+          setAdminData({ id: doc.id, ...doc.data() } as AdminData);
         }
         setLoading(false);
       }
@@ -112,7 +123,7 @@ export function AdminDashboard() {
               onChange={(e) => setDateRange(e.target.value)}
               className="px-3 py-1 border border-border rounded-md text-sm bg-background"
             >
-              <option value="24h">Last 24 Hours</option> {/* CHANGE 4 */}
+              <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
@@ -127,7 +138,6 @@ export function AdminDashboard() {
 
       <OverviewMetrics dateRange={dateRange} />
 
-      {/* CHANGE 3: Removed "Users" tab and adjusted grid columns */}
       <Tabs defaultValue="usage" className="w-full">
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>

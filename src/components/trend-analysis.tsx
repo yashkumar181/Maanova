@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, getDocs, Timestamp } from "fireba
 import { onAuthStateChanged } from "firebase/auth"
 import { db, auth } from '../lib/firebase-config'
 import { Card } from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { TrendingUp, TrendingDown, AlertTriangle, Users } from "lucide-react"
 
 interface TrendAnalysisProps {
@@ -19,11 +19,6 @@ interface TopicTrendData {
   depression: number;
   academic_stress: number;
   wellness: number;
-}
-
-interface TrendStat {
-    value: number;
-    change: number;
 }
 
 export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
@@ -80,8 +75,11 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
     const unsubscribe = onSnapshot(trendsQuery, (snapshot) => {
       const sessions = snapshot.docs.map(doc => doc.data());
       
-      // Process data for charts and stats
-      const dailyCounts: { [date: string]: any } = {};
+      // --- THIS IS THE FIX ---
+      // We replace 'any' with the specific 'TopicTrendData' type.
+      const dailyCounts: { [date: string]: TopicTrendData } = {};
+      // ----------------------
+
       const totalCounts = { anxiety: 0, depression: 0, academic_stress: 0, wellness: 0 };
 
       sessions.forEach(session => {
@@ -103,12 +101,15 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
       
       setTrendData(chartData);
       setStats({
-          anxiety: { value: totalCounts.anxiety, change: 0 }, // Change calculation would be more complex
+          anxiety: { value: totalCounts.anxiety, change: 0 },
           depression: { value: totalCounts.depression, change: 0 },
           academic_stress: { value: totalCounts.academic_stress, change: 0 },
           wellness: { value: totalCounts.wellness, change: 0 },
       });
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching trend data:", error);
+        setLoading(false);
     });
 
     return () => unsubscribe();
@@ -150,8 +151,6 @@ export function TrendAnalysis({ dateRange }: TrendAnalysisProps) {
           </LineChart>
         </ResponsiveContainer>
       </Card>
-      
-      {/* The rest of the static components can remain as they are for now */}
     </div>
   )
 }

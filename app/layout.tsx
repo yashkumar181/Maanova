@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
-import Script from "next/script"; // <-- 1. IMPORT THE SCRIPT COMPONENT
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/toaster"; // Import the Toaster
+import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Mental-Health-Platform",
-  description: "Created by commitMints",
-  generator: "commitMints",
+  title: "MindCare | Your Mental Health Platform",
+  description: "A safe space for student mental health support.",
 };
 
 export default function RootLayout({
@@ -21,23 +18,30 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body className={`font-sans ${GeistSans.variable}`}>
+        {/* This ThemeProvider is essential for the dropdown to work */}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
-          <Analytics />
-          <Toaster />
+          <Toaster /> {/* This is needed for notifications */}
         </ThemeProvider>
+        
+        <Analytics />
+        
+        {/* Use the Next.js Script component for external scripts */}
+        <Script
+          src="https://cdn.botpress.cloud/webchat/v3.2/inject.js"
+          strategy="afterInteractive"
+        />
+        <Script
+          src="https://files.bpcontent.cloud/2025/09/09/10/20250909105231-ITKTK13R.js"
+          strategy="afterInteractive"
+        />
       </body>
-
-      {/* 2. MOVE AND CONVERT SCRIPT TAGS TO USE THE NEXT.JS SCRIPT COMPONENT */}
-      <Script
-        src="https://cdn.botpress.cloud/webchat/v3.2/inject.js"
-        strategy="afterInteractive"
-      />
-      <Script
-        src="https://files.bpcontent.cloud/2025/09/09/10/20250909105231-ITKTK13R.js"
-        strategy="afterInteractive"
-      />
     </html>
   );
 }

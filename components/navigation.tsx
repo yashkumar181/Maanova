@@ -2,19 +2,26 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { onAuthStateChanged, signOut } from "firebase/auth"
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore"
+import { User, onAuthStateChanged, signOut } from "firebase/auth"
+import { doc, getDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, LayoutDashboard, User as UserIcon } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton" // <-- THE FIX IS HERE
+import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ThemeToggle from "@/components/ThemeToggle"
 
+// Define a specific type for student data for better type safety
+interface StudentData {
+  username: string;
+  email: string;
+  collegeId: string;
+}
+
 export function Navigation() {
-  const [user, setUser] = useState<any | null>(null)
-  const [studentData, setStudentData] = useState<any | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [studentData, setStudentData] = useState<StudentData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,14 +31,7 @@ export function Navigation() {
         const studentDocRef = doc(db, "students", currentUser.uid)
         const studentSnap = await getDoc(studentDocRef)
         if (studentSnap.exists()) {
-          setStudentData(studentSnap.data())
-          // --- THIS IS THE NEW LOGIC ---
-          // Update the lastActive timestamp whenever the user is confirmed to be logged in.
-          // This doesn't need to happen on every click, just once per session is enough.
-          await updateDoc(studentDocRef, {
-            lastActive: serverTimestamp(),
-          })
-          // --------------------------
+          setStudentData(studentSnap.data() as StudentData)
         }
       } else {
         setUser(null)
@@ -69,7 +69,7 @@ export function Navigation() {
           <div className="flex items-center space-x-4">
             <ThemeToggle />
             {loading ? (
-              <Skeleton className="h-10 w-10 rounded-full" />
+              <Skeleton className="h-10 w-24 rounded-md" />
             ) : user && studentData ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -88,7 +88,7 @@ export function Navigation() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" /><span>Profile</span></DropdownMenuItem></Link>
+                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" /><span>My Profile</span></DropdownMenuItem></Link>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Sign Out</span></DropdownMenuItem>
                 </DropdownMenuContent>

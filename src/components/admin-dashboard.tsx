@@ -2,53 +2,65 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebase-config';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { auth, db } from '../lib/firebase-config';
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { OverviewMetrics } from "@/components/overview-metrics"
 import { UsageAnalytics } from "@/components/usage-analytics"
 import { CrisisTracking } from "@/components/crisis-tracking"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, Users, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, Users2, BookOpen } from "lucide-react" // Added BookOpen icon
+import { BarChart3, Users2, AlertTriangle, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut, User as UserIcon } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-// Import the existing and new components
 import { CounselorManagement } from './counselor-management';
 import { AppointmentViewer } from './appointment-viewer';
-import { ResourceManagement } from './resource-management';
+import { ResourceManagement } from "./resource-management";
 
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d")
   const [loading, setLoading] = useState(true);
+  const [adminData, setAdminData] = useState<any | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push('/login');
       } else {
+        // Fetch admin data for the profile dropdown
+        const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid));
+        const adminSnapshot = await getDocs(adminQuery);
+        if (!adminSnapshot.empty) {
+          setAdminData({ id: adminSnapshot.docs[0].id, ...adminSnapshot.docs[0].data() });
+        }
         setLoading(false);
       }
     });
     return () => unsubscribe();
   }, [router]);
 
-  const handleExportData = () => {
-    console.log("Exporting data for range:", dateRange)
-  }
-  
-  if (loading) {
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  if (loading || !adminData) {
     return (
       <div className="space-y-6 p-8">
         <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" />
-        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4"><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /><Skeleton className="h-32 w-full" /></div>
         <Skeleton className="h-96 w-full" />
       </div>
     );
@@ -56,6 +68,34 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{adminData.username?.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{adminData.username}</p>
+                <p className="text-xs leading-none text-muted-foreground">{adminData.gmail}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="font-normal">
+                <p className="text-xs text-muted-foreground">College: {adminData.collegeName}</p>
+                <p className="text-xs text-muted-foreground">ID: {adminData.id}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Sign Out</span></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
       <Alert className="border-primary/20 bg-primary/5">
         <Shield className="h-4 w-4 text-primary" />
         <AlertDescription className="text-sm">
@@ -72,12 +112,13 @@ export function AdminDashboard() {
               onChange={(e) => setDateRange(e.target.value)}
               className="px-3 py-1 border border-border rounded-md text-sm bg-background"
             >
+              <option value="24h">Last 24 Hours</option> {/* CHANGE 4 */}
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
             </select>
           </div>
-          <Button onClick={handleExportData} variant="outline" className="bg-transparent">
+          <Button onClick={() => console.log("Exporting...")} variant="outline" className="bg-transparent">
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>
@@ -86,17 +127,16 @@ export function AdminDashboard() {
 
       <OverviewMetrics dateRange={dateRange} />
 
-      {/* MODIFIED: Adjusted grid columns to accommodate the new tab */}
+      {/* CHANGE 3: Removed "Users" tab and adjusted grid columns */}
       <Tabs defaultValue="usage" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
           <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
           <TabsTrigger value="crisis"><AlertTriangle className="mr-2 h-4 w-4" />Crisis</TabsTrigger>
           <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
           <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
           <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counsellors</TabsTrigger>
-          <TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger> {/* <-- NEW TAB */}
-          <TabsTrigger value="users"><Users className="mr-2 h-4 w-4" />Users</TabsTrigger>
+          <TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="usage" className="mt-6"><UsageAnalytics dateRange={dateRange} /></TabsContent>
@@ -105,19 +145,7 @@ export function AdminDashboard() {
         <TabsContent value="moderation" className="mt-6"><ModerationTools /></TabsContent>
         <TabsContent value="appointments" className="mt-6"><AppointmentViewer /></TabsContent>
         <TabsContent value="counselors" className="mt-6"><CounselorManagement /></TabsContent>
-        <TabsContent value="resources" className="mt-6"><ResourceManagement /></TabsContent> {/* <-- NEW CONTENT */}
-        <TabsContent value="users" className="mt-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">User Demographics</h3>
-              {/* Placeholder Content */}
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Platform Satisfaction</h3>
-              {/* Placeholder Content */}
-            </Card>
-          </div>
-        </TabsContent>
+        <TabsContent value="resources" className="mt-6"><ResourceManagement /></TabsContent>
       </Tabs>
     </div>
   )

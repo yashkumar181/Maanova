@@ -127,6 +127,7 @@ const Index = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 rounded-lg">
             <ResourceCard
               title="Mindfulness & Meditation"
               description="Guided meditation sessions and mindfulness exercises to help you find inner peace and reduce stress."
@@ -169,6 +170,7 @@ const Index = () => {
               color="mint"
               delay={6}
             />
+            </div>
           </div>
         </div>
       </section>

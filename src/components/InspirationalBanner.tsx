@@ -91,7 +91,7 @@ export function InspirationalBanner() {
 
             {/* Mobile Menu Button */}
             <div className="flex items-center gap-2 md:hidden">
-              <MobileThemeToggle />
+              <ThemeToggle />
               <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 text-foreground hover:text-primary transition-colors"

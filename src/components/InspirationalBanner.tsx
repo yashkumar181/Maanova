@@ -30,12 +30,6 @@ export function InspirationalBanner() {
     setMobileMenuOpen(false);
   };
 
-  const handleLogin = (type: 'student' | 'admin') => {
-    // TODO: Implement login functionality
-    console.log(`${type} login clicked`);
-    setMobileMenuOpen(false);
-  };
-
   return (
     <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
       {/* Navigation Header */}
@@ -129,7 +123,6 @@ export function InspirationalBanner() {
                 <a href="https://mental-health-platform-eosin.vercel.app/">
                 <Button 
                   size="sm"
-                  onClick={() => handleLogin('student')}
                   className="w-full justify-start hover:bg-primary/90
                   text-primary-foreground"
                 >
@@ -140,7 +133,6 @@ export function InspirationalBanner() {
                 <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
                 <Button 
                   size="sm"
-                  onClick={() => handleLogin('admin')}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <ShieldCheck className="h-4 w-4 mr-2" />

@@ -135,6 +135,8 @@ const Index = () => {
               color="primary"
               delay={1}
             />
+            </div>
+            <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 rounded-lg">
             <ResourceCard
               title="Peer Support Groups"
               description="Connect with fellow students who understand your struggles in a safe, non-judgmental environment."
@@ -142,6 +144,8 @@ const Index = () => {
               color="mint"
               delay={2}
             />
+            </div>
+            <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 rounded-lg">
             <ResourceCard
               title="Study-Life Balance"
               description="Learn practical strategies to manage academic pressure while maintaining your mental health."
@@ -149,6 +153,8 @@ const Index = () => {
               color="ocean"
               delay={3}
             />
+            </div>
+            <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 rounded-lg">
             <ResourceCard
               title="Crisis Support"
               description="24/7 emotional support and crisis intervention when you need immediate help and guidance."
@@ -156,6 +162,8 @@ const Index = () => {
               color="sage"
               delay={4}
             />
+            </div>
+            <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 rounded-lg">
             <ResourceCard
               title="Online Counseling"
               description="Professional therapy sessions with licensed counselors, available through secure video calls."
@@ -163,6 +171,8 @@ const Index = () => {
               color="primary"
               delay={5}
             />
+            </div>
+            <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/20 rounded-lg">
             <ResourceCard
               title="Wellness Workshops"
               description="Interactive workshops on stress management, anxiety coping skills, and building resilience."

@@ -4,7 +4,6 @@ import { InspirationalBanner } from "@/components/InspirationalBanner";
 import { ResourceCard } from "@/components/ResourceCard";
 import { HelplineCard } from "@/components/HelplineCard";
 import { FloatingElement } from "@/components/FloatingElement";
-import FeaturesSection from "@/components/FeaturesSection";
 
 import { 
   Brain, 
@@ -127,8 +126,7 @@ const Index = () => {
               Comprehensive tools and support for your wellbeing journey
             </p>
           </div>
-          <FeaturesSection />
-          {/* <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ResourceCard
               title="Mindfulness & Meditation"
               description="Guided meditation sessions and mindfulness exercises to help you find inner peace and reduce stress."
@@ -170,7 +168,8 @@ const Index = () => {
               icon={Calendar}
               color="mint"
               delay={6}
-            /> */}
+            />
+            </div>
         </div>
       </section>
 

@@ -69,7 +69,6 @@ export function InspirationalBanner() {
               <a href="https://mental-health-platform-eosin.vercel.app/">
               <Button 
                 size="sm"
-                onClick={() => handleLogin('student')}
                 className="hover:bg-primary/90
                 text-primary-foreground"
               >
@@ -80,7 +79,6 @@ export function InspirationalBanner() {
               <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
               <Button 
                 size="sm"
-                onClick={() => handleLogin('admin')}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ShieldCheck className="h-4 w-4 mr-1" />

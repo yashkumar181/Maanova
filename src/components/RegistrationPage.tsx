@@ -88,7 +88,8 @@ export function RegistrationPage() {
       <Card className="w-full max-w-3xl my-8 border-t-4 border-primary">
         <CardHeader className="text-center">
           <CardTitle>Create an Admin Account</CardTitle>
-          <CardDescription>Join to support your students' mental wellness journey.</CardDescription>
+          {/* CORRECTED: Replaced the apostrophe with &apos; to fix the deployment error */}
+          <CardDescription>Join to support your students&apos; mental wellness journey.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-8">

@@ -1,112 +1,127 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { useToast } from "./ui/use-toast";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import ThemeToggle from "./ThemeToggle";
+import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 export function StudentRegisterPage() {
-    const [formData, setFormData] = useState({ collegeId: '', username: '', email: '', password: '' });
-    const [message, setMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
+  const [collegeId, setCollegeId] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  // 1. ADDED STATE for confirm password field and its visibility
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
-    };
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
 
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setMessage('');
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-        if (!formData.collegeId || !formData.username || !formData.email || !formData.password) {
-            setMessage('❌ Please fill all fields!');
-            setIsLoading(false);
-            return;
-        }
+    if (!collegeId || !username || !email || !password || !confirmPassword) {
+      toast({ title: "Error", description: "Please fill in all fields.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
 
-        try {
-            // Step 1: Verify College ID exists
-            const adminDocRef = doc(db, "admins", formData.collegeId);
-            const adminDoc = await getDoc(adminDocRef);
-            if (!adminDoc.exists()) {
-                throw new Error("College ID not found!");
-            }
+    // 2. ADDED LOGIC to check if passwords match
+    if (password !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match. Please try again.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
 
-            // Step 2: Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-            const user = userCredential.user;
+    try {
+      const adminDocRef = doc(db, "admins", collegeId);
+      const adminDoc = await getDoc(adminDocRef);
+      if (!adminDoc.exists()) {
+        throw new Error("Invalid College ID. Please check and try again.");
+      }
 
-            // Step 3: Store student data in Firestore
-            await setDoc(doc(db, "students", user.uid), {
-                username: formData.username,
-                email: formData.email,
-                collegeId: formData.collegeId,
-                createdAt: serverTimestamp()
-            });
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-            setMessage('✅ Registration Successful! Please log in.');
-            setTimeout(() => {
-                router.push('/login');
-            }, 2000);
+      await setDoc(doc(db, "students", user.uid), {
+        uid: user.uid,
+        username: username,
+        email: email,
+        collegeId: collegeId,
+        createdAt: serverTimestamp(),
+      });
 
-        } catch (error: any) {
-            console.error(error);
-            setMessage(`❌ Registration Failed: ${error.message}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-            <div className="p-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
-                <h2 className="text-3xl font-bold text-center mb-6 text-gray-800 dark:text-gray-200">Student Registration</h2>
-                <form onSubmit={handleRegister} className="space-y-4">
-                    <div>
-                        <label htmlFor="collegeId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">College ID</label>
-                        <input type="text" id="collegeId" value={formData.collegeId} onChange={handleChange} required className="input-style" />
-                    </div>
-                    <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-                        <input type="text" id="username" value={formData.username} onChange={handleChange} required className="input-style" />
-                    </div>
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                        <input type="email" id="email" value={formData.email} onChange={handleChange} required className="input-style" />
-                    </div>
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                        <input type="password" id="password" value={formData.password} onChange={handleChange} required className="input-style" />
-                    </div>
-                    <button type="submit" disabled={isLoading} className="button-style">
-                        {isLoading ? 'Registering...' : 'Register'}
-                    </button>
-                    {message && <p className={`mt-4 text-sm text-center ${message.includes('❌') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>}
-                </form>
-                 <div className="text-center mt-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Already have an account?{' '}
-                        <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">Login here</a>
-                    </p>
-                </div>
-            </div>
-             <style jsx>{`
-                .input-style {
-                    margin-top: 0.25rem; display: block; width: 100%; padding: 0.75rem; border: 1px solid #D1D5DB; border-radius: 0.5rem; background-color: #F9FAFB; color: #111827;
-                }
-                .dark .input-style {
-                    border-color: #4B5563; background-color: #374151; color: #F9FAFB;
-                }
-                .button-style {
-                    width: 100%; display: flex; justify-content: center; padding: 0.75rem; border: 1px solid transparent; border-radius: 0.5rem; font-medium text-white bg-blue-600 hover:bg-blue-700;
-                }
-                .button-style:disabled {
-                    background-color: #9CA3AF;
-                }
-            `}</style>
+      toast({ title: "Registration Successful!", description: "Welcome! Please log in to continue." });
+      router.push('/login');
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+      toast({ title: "Registration Failed", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-slate-900 dark:to-gray-900 p-4 font-sans">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg dark:bg-gray-800 border dark:border-gray-700">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Create Your Account</h2>
+          <p className="text-muted-foreground">Join our community and start your wellness journey.</p>
         </div>
-    );
+        <form onSubmit={handleRegister} className="space-y-4">
+          <div>
+            <Label htmlFor="collegeId">College ID</Label>
+            <Input id="collegeId" type="text" placeholder="Enter your college-provided ID" value={collegeId} onChange={(e) => setCollegeId(e.target.value)} required />
+          </div>
+          <div>
+            <Label htmlFor="username">Username</Label>
+            <Input id="username" type="text" placeholder="Choose username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" placeholder="Your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+          <div className="relative">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type={showPassword ? "text" : "password"} placeholder="......" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[2.1rem] text-muted-foreground">
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {/* 3. ADDED UI for the Confirm Password field */}
+          <div className="relative">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="......" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-[2.1rem] text-muted-foreground">
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating Account..." : "Register"}
+          </Button>
+        </form>
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Login here
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
 }

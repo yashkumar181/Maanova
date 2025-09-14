@@ -168,8 +168,8 @@ const Index = () => {
               icon={Calendar}
               color="mint"
               delay={6}
-            />
-          </div> */}
+            /> */}
+          </div>
         </div>
       </section>
 

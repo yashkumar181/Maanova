@@ -32,9 +32,9 @@ export function InspirationalBanner() {
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
-      {/* Navigation Header */}
-      <nav className="relative z-50 py-4">
+    <>
+      {/* Fixed Floating Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-md border-b border-border/30 py-3 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo/Brand */}
@@ -100,7 +100,7 @@ export function InspirationalBanner() {
 
           {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border/50 py-4 px-4 space-y-3">
+            <div className="md:hidden absolute top-full left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border/50 py-4 px-4 space-y-3 shadow-lg">
               <button 
                 onClick={() => scrollToSection('vision')}
                 className="block w-full text-left py-2 px-3 text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors font-medium"

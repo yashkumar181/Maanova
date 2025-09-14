@@ -128,10 +128,10 @@ export function InspirationalBanner() {
               <div className="border-t border-border/30 pt-3 space-y-2">
                 <a href="https://mental-health-platform-eosin.vercel.app/">
                 <Button 
-                  variant="ghost" 
                   size="sm"
                   onClick={() => handleLogin('student')}
-                  className="w-full justify-start hover:bg-primary/10"
+                  className="w-full justify-start hover:bg-primary/90
+                  text-primary-foreground"
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Student Login

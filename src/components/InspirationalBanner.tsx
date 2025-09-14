@@ -120,7 +120,7 @@ export function InspirationalBanner() {
                 Helplines
               </button>
               <div className="border-t border-border/30 pt-3 space-y-2">
-                <a href="https://mental-health-platform-eosin.vercel.app/">
+                <a href="https://mental-health-platform-eosin.vercel.app/" className="block">
                 <Button 
                   size="sm"
                   className="w-full justify-start hover:bg-primary/90
@@ -130,10 +130,10 @@ export function InspirationalBanner() {
                   Student Login
                 </Button>
                 </a>
-                <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
+                <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/" className="block">
                 <Button 
                   size="sm"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <ShieldCheck className="h-4 w-4 mr-2" />
                   Admin Login

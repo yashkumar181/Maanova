@@ -90,25 +90,6 @@ export function InspirationalBanner() {
             </div>
 
             {/* Mobile Menu Button */}
-            <a href="https://mental-health-platform-eosin.vercel.app/">
-                <Button 
-                  size="sm"
-                  className="w-full justify-start hover:bg-primary/90
-                  text-primary-foreground"
-                >
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Student Login
-                </Button>
-                </a>
-                <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
-                <Button 
-                  size="sm"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  <ShieldCheck className="h-4 w-4 mr-2" />
-                  Admin Login
-                </Button>
-                </a>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground hover:text-primary transition-colors"
@@ -138,7 +119,7 @@ export function InspirationalBanner() {
               >
                 Helplines
               </button>
-              {/* <div className="border-t border-border/30 pt-3 space-y-2">
+              <div className="border-t border-border/30 pt-3 space-y-2">
                 <a href="https://mental-health-platform-eosin.vercel.app/">
                 <Button 
                   size="sm"
@@ -158,7 +139,7 @@ export function InspirationalBanner() {
                   Admin Login
                 </Button>
                 </a>
-              </div> */}
+              </div>
             </div>
           )}
         </div>

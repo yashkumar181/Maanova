@@ -13,7 +13,7 @@ interface HelplineCardProps {
 export function HelplineCard({ name, number, hours, description, delay = 0 }: HelplineCardProps) {
   return (
     <Card 
-      className="animate-slide-up hover-lift"
+      className="hover-lift"
       style={{ animationDelay: `${delay * 0.2}s` }}
     >
       <CardContent className="p-6">

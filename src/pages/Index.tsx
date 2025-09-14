@@ -44,7 +44,7 @@ const Index = () => {
       <InspirationalBanner />
 
       {/* Hero Section */}
-      <section className="relative py-32 px-4" style={{ paddingTop: '155px' paddingBottom: '20px'}}>
+      <section className="relative py-32 px-4" style={{ paddingTop: '155px',paddingBottom: '20px'}}>
         <div className="container mx-auto max-w-4xl text-center">
           <div className="animate-fade-in">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-12 text-foreground">

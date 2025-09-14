@@ -4,6 +4,8 @@ import { InspirationalBanner } from "@/components/InspirationalBanner";
 import { ResourceCard } from "@/components/ResourceCard";
 import { HelplineCard } from "@/components/HelplineCard";
 import { FloatingElement } from "@/components/FloatingElement";
+import FeaturesSection from "@/components/FeaturesSection";
+
 import { 
   Brain, 
   Heart, 

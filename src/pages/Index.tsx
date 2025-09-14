@@ -125,8 +125,8 @@ const Index = () => {
               Comprehensive tools and support for your wellbeing journey
             </p>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          < FeaturesSection />
+          {/* <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ResourceCard
               title="Mindfulness & Meditation"
               description="Guided meditation sessions and mindfulness exercises to help you find inner peace and reduce stress."
@@ -169,7 +169,7 @@ const Index = () => {
               color="mint"
               delay={6}
             />
-          </div>
+          </div> */}
         </div>
       </section>
 

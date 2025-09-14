@@ -171,7 +171,6 @@ const Index = () => {
               color="mint"
               delay={6}
             /> */}
-          </div>
         </div>
       </section>
 

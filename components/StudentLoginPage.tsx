@@ -9,7 +9,7 @@ import { useToast } from "./ui/use-toast";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import ThemeToggle from "./ThemeToggle"; // CORRECTED: Changed to a default import
+import ThemeToggle from "./ThemeToggle";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -33,21 +33,30 @@ export function StudentLoginPage() {
     }
 
     try {
-      const studentDocRef = doc(db, "students", email);
+      // Step 1: Attempt to sign in with email and password first.
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Step 2: If sign-in is successful, use the UID to get the student's profile.
+      const studentDocRef = doc(db, "students", user.uid);
       const studentDoc = await getDoc(studentDocRef);
 
+      // Step 3: Check if the profile exists and if the college ID matches.
       if (!studentDoc.exists() || studentDoc.data().collegeId !== collegeId) {
-        throw new Error("Invalid credentials or college ID.");
+        // If it doesn't match, the user is valid but for the wrong college.
+        // Sign them out immediately and throw an error.
+        await auth.signOut();
+        throw new Error("Invalid College ID for this user.");
       }
-
-      await signInWithEmailAndPassword(auth, email, password);
       
+      // If everything matches, the login is successful.
       toast({ title: "Login Successful!", description: "Welcome back!" });
-      router.push('/');
+      router.push('/'); // Redirect to the homepage
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-      toast({ title: "Login Failed", description: errorMessage, variant: "destructive" });
+      // Provide a more generic message for security
+      toast({ title: "Login Failed", description: "Invalid credentials or College ID. Please try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -66,15 +75,15 @@ export function StudentLoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <Label htmlFor="collegeId">College ID</Label>
-            <Input id="collegeId" type="text" placeholder="e.g., CLG-ABC123XYZ" value={collegeId} onChange={(e) => setCollegeId(e.target.value)} required />
+            <Input id="collegeId" type="text" placeholder="Enter your college ID" value={collegeId} onChange={(e) => setCollegeId(e.target.value)} required />
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="Your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="relative">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type={showPassword ? "text" : "password"} placeholder="......" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[2.1rem] text-muted-foreground">
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>

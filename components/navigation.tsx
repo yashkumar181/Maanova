@@ -11,7 +11,9 @@ import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIc
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import ThemeToggle from "@/components/ThemeToggle"
-import { Avatar, AvatarFallback } from "./ui/avatar" // Added this import
+import { Avatar, AvatarFallback } from "./ui/avatar"
+import { useTranslation } from "react-i18next";
+import { LanguageToggle } from "./LanguageToggle"
 
 interface StudentData {
   username: string;
@@ -19,9 +21,18 @@ interface StudentData {
 }
 
 export function Navigation() {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // THIS IS THE FIX: State to prevent hydration errors
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  // END OF FIX
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -49,16 +60,23 @@ export function Navigation() {
     }
   };
 
-  // 1. Create a function to close the mobile menu
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
+  // Don't render translated text until the component is mounted on the client
+  if (!isMounted) {
+    return (
+      <header className="bg-card border-b border-border sticky top-0 z-50">
+        <div className="container mx-auto px-4"><div className="flex items-center justify-between h-16"><Skeleton className="h-8 w-32" /><Skeleton className="h-10 w-48" /></div></div>
+      </header>
+    );
+  }
+
   const navLinks = (
-    // 2. Add the onClick handler to each link
     <>
-      <Link href="/" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><MessageCircle className="mr-2 h-4 w-4" />Chat Support</Button></Link>
-      <Link href="/booking" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />Book Counselor</Button></Link>
-      <Link href="/resources" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />Resources</Button></Link>
-      <Link href="/forum" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />Peer Support</Button></Link>
+      <Link href="/" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><MessageCircle className="mr-2 h-4 w-4" />{t('navigation.chat')}</Button></Link>
+      <Link href="/booking" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />{t('navigation.booking')}</Button></Link>
+      <Link href="/resources" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />{t('navigation.resources')}</Button></Link>
+      <Link href="/forum" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />{t('navigation.forum')}</Button></Link>
     </>
   );
 
@@ -68,48 +86,39 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
             <Heart className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">MindCare</span>
+            <span className="text-xl font-bold text-foreground">{t('navigation.title')}</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-1">{navLinks}</div>
 
           <div className="flex items-center space-x-2">
+            <LanguageToggle />
             <ThemeToggle />
             {loading ? (
               <Skeleton className="h-10 w-24 rounded-md" />
             ) : user && studentData ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  {/* Using the Avatar again as it should be fixed now */}
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>{studentData.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                    <Avatar className="h-10 w-10"><AvatarFallback>{studentData.username?.charAt(0).toUpperCase()}</AvatarFallback></Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{studentData.username}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{studentData.email}</p>
-                    </div>
+                    <div className="flex flex-col space-y-1"><p className="text-sm font-medium leading-none">{studentData.username}</p><p className="text-xs leading-none text-muted-foreground">{studentData.email}</p></div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" />My Profile</DropdownMenuItem></Link>
+                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" /><span>{t('navigation.profile')}</span></DropdownMenuItem></Link>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer"><LogOut className="mr-2 h-4 w-4" /><span>{t('navigation.sign_out')}</span></DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="hidden md:flex items-center space-x-2">
-                <Link href="/login"><Button variant="ghost">Login</Button></Link>
-                <Link href="/register"><Button>Register</Button></Link>
+                <Link href="/login"><Button variant="ghost">{t('navigation.login')}</Button></Link>
+                <Link href="/register"><Button>{t('navigation.register')}</Button></Link>
               </div>
             )}
-            
             <div className="md:hidden">
               <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -118,18 +127,17 @@ export function Navigation() {
           </div>
         </div>
       </div>
-
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border p-4 space-y-2">
           {navLinks}
            {!user && !loading && (
              <div className="border-t pt-4 space-y-2">
-                <Link href="/login" onClick={closeMobileMenu}><Button variant="outline" className="w-full">Login</Button></Link>
-                <Link href="/register" onClick={closeMobileMenu}><Button className="w-full">Register</Button></Link>
+                <Link href="/login" onClick={closeMobileMenu}><Button variant="outline" className="w-full">{t('navigation.login')}</Button></Link>
+                <Link href="/register" onClick={closeMobileMenu}><Button className="w-full">{t('navigation.register')}</Button></Link>
              </div>
            )}
         </div>
       )}
     </header>
-  )
+  );
 }

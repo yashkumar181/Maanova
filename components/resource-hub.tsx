@@ -12,7 +12,6 @@ import { ResourceCard } from "@/components/resource-card"
 import { Search, Filter, BookOpen, Video, Headphones, FileText, Globe } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Define the shape of the Resource data from Firestore
 interface Resource {
   id: string;
   title: string;
@@ -21,26 +20,22 @@ interface Resource {
   type: 'video' | 'audio' | 'article' | 'guide' | 'tool';
   category: string;
   collegeId: string;
-  // Re-adding optional fields for filtering from your original design
   language?: string; 
 }
 
-// Re-adding categories and languages from your original design
 const categories = [
   "All", "Anxiety Management", "Depression Support", "Stress Relief", 
   "Academic Stress", "Mindfulness", "Relationships", "Sleep & Wellness", 
   "Crisis Support", "Self-Esteem",
 ];
 
-const languages = ["All Languages", "English", "Spanish"]; // Simplified for example
+const languages = ["All Languages", "English", "Spanish"];
 
 export function ResourceHub() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [collegeId, setCollegeId] = useState<string | null>(null);
   const [userUid, setUserUid] = useState<string | null>(null);
-  
-  // Re-adding full filtering state from your original design
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedLanguage, setSelectedLanguage] = useState("All Languages");
@@ -123,7 +118,8 @@ export function ResourceHub() {
       </Card>
 
       <Tabs value={selectedType} onValueChange={setSelectedType} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        {/* RESPONSIVENESS: The grid now stacks on mobile and expands on larger screens */}
+        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           <TabsTrigger value="all"><BookOpen className="mr-2 h-4 w-4" />All</TabsTrigger>
           <TabsTrigger value="video"><Video className="mr-2 h-4 w-4" />Videos</TabsTrigger>
           <TabsTrigger value="audio"><Headphones className="mr-2 h-4 w-4" />Audio</TabsTrigger>
@@ -154,10 +150,9 @@ export function ResourceHub() {
         </TabsContent>
       </Tabs>
       
-      {/* --- THIS IS THE RESTORED QUICK ACCESS SECTION --- */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Quick Access</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4"> {/* RESPONSIVENESS: Changed to 2 columns on mobile */}
           <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2" onClick={() => setSelectedCategory("Crisis Support")}>
             <div className="p-2 bg-destructive/10 rounded-full"><FileText className="h-6 w-6 text-destructive" /></div>
             <span className="text-sm font-medium">Crisis Resources</span>
@@ -176,8 +171,6 @@ export function ResourceHub() {
           </Button>
         </div>
       </Card>
-      {/* ---------------------------------------------------- */}
     </div>
   )
 }
-

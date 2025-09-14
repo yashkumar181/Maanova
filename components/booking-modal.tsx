@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { db, auth } from "@/lib/firebase"
@@ -51,14 +50,12 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
     
     setIsSubmitting(true)
     try {
-      // Get the student's collegeId to tag the booking
       const studentDoc = await getDoc(doc(db, "students", currentUser.uid))
       if (!studentDoc.exists()) {
         throw new Error("Could not find student profile.");
       }
       const collegeId = studentDoc.data().collegeId
 
-      // Save the new booking to Firestore
       await addDoc(collection(db, "bookings"), {
         counselorId: counselor.id,
         studentUid: currentUser.uid,
@@ -66,7 +63,7 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
         date: Timestamp.fromDate(selectedDate),
         time: selectedTime,
         reason: reason,
-        status: "pending", // Admins will need to confirm this
+        status: "pending",
         createdAt: Timestamp.now(),
       })
 
@@ -80,7 +77,6 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
   }
 
   const handleClose = () => {
-    // Reset state when closing the modal
     setIsBooked(false)
     setSelectedDate(new Date())
     setSelectedTime("")
@@ -90,7 +86,6 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
 
   if (!counselor) return null
 
-  // Show a success message after booking
   if (isBooked) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -115,15 +110,16 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
           <DialogTitle>Book an Appointment with {counselor.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* RESPONSIVENESS: Changed to grid-cols-1 on mobile and md:grid-cols-2 on medium screens and up */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Select Date</Label>
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6} // Disable past dates, Sat, Sun
-                className="rounded-md border"
+                disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
+                className="rounded-md border mx-auto" // Added mx-auto to center the calendar on mobile
               />
             </div>
             <div className="space-y-4">

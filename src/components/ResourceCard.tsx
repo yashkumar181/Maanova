@@ -34,7 +34,7 @@ export function ResourceCard({
   return (
     <Card
       className={cn(
-        "group h-full cursor-pointer transition-all duration-500 ease-in-out hover:-translate-y-1 hover:shadow-lg animate-slide-up",
+        "group h-full cursor-pointer opacity-0 translate-y-4 animate-fade-in transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg",
         colorClasses[color]
       )}
       style={{ animationDelay: `${delay * 0.1}s` }}

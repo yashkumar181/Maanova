@@ -34,7 +34,7 @@ export function InspirationalBanner() {
   return (
     <>
       {/* Fixed Floating Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-md border-b border-border/30 py-3 shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent border-b border-border/30 py-3 shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo/Brand */}

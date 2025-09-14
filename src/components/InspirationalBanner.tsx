@@ -90,7 +90,6 @@ export function InspirationalBanner() {
             </div>
 
             {/* Mobile Menu Button */}
-            <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground hover:text-primary transition-colors"

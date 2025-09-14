@@ -90,12 +90,15 @@ export function InspirationalBanner() {
             </div>
 
             {/* Mobile Menu Button */}
-            <button
+            <div>
+              <ThemeToggle />
+              <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 text-foreground hover:text-primary transition-colors"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
+            </div>
           </div>
 
           {/* Mobile Navigation Menu */}

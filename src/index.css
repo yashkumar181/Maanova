@@ -171,7 +171,7 @@ All colors MUST be HSL.
   }
 
   .animate-slide-up {
-    animation: slideUp 0.8s ease-out;
+    animation: slideUp 0.8s ease-out forwards;
   }
 
   .animate-bounce-gentle {
@@ -184,6 +184,7 @@ All colors MUST be HSL.
 
   .hover-lift {
     transition: var(--transition-gentle);
+    will-change: transform, box-shadow;
   }
 
   .hover-lift:hover {

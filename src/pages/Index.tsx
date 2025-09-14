@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { InspirationalBanner } from "@/components/InspirationalBanner";
 import { ResourceCard } from "@/components/ResourceCard";
 import { HelplineCard } from "@/components/HelplineCard";
@@ -20,12 +19,10 @@ import {
   Star
 } from "lucide-react";
 import groupSupportImage from "@/assets/group-support.jpg";
-import peacefulNatureImage from "@/assets/peaceful-nature.jpg";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <ThemeToggle />
       
       {/* Decorative background elements */}
       <div className="absolute inset-0 opacity-30">

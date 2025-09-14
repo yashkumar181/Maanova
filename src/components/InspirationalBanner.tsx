@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FloatingElement } from "./FloatingElement";
 import { Button } from "./ui/button";
 import { Sparkles, Heart, Menu, X, UserCheck, ShieldCheck } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const inspirationalPhrases = [
   "Every step forward is progress 💚",
@@ -86,6 +87,8 @@ export function InspirationalBanner() {
               </Button>
               </a>
             </div>
+
+            <ThemeToggle />
 
             {/* Mobile Menu Button */}
             <button

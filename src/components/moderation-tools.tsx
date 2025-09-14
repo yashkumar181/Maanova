@@ -1,16 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-// CORRECTED: Added 'getDoc' and 'increment' to the list of imports
 import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, deleteDoc, Timestamp, collectionGroup, getDoc, increment } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Flag, Eye, CheckCircle, X, AlertTriangle, ShieldCheck } from "lucide-react"
 import { auth, db } from '../lib/firebase-config'
 import { useToast } from "./ui/use-toast"
-import Link from "next/link"
 
 interface ForumPost {
   id: string; title: string; authorUsername: string; content: string; timestamp: Timestamp; flags: number; category: string; riskLevel?: string; status: 'pending' | 'approved' | 'rejected';
@@ -77,35 +75,26 @@ export function ModerationTools() {
 
   const handleApprove = async (postId: string) => {
     const postRef = doc(db, "forumPosts", postId);
-    try {
-      await updateDoc(postRef, { status: "approved" });
-      toast({ title: "Success", description: "Post has been approved." });
+    try { await updateDoc(postRef, { status: "approved" }); toast({ title: "Success", description: "Post has been approved." });
     } catch (error) { toast({ title: "Error", description: "Could not approve post.", variant: "destructive" }); }
   };
 
   const handleReject = async (postId: string) => {
     const postRef = doc(db, "forumPosts", postId);
-    try {
-      await deleteDoc(postRef); 
-      toast({ title: "Success", description: "Post has been rejected and deleted." });
+    try { await deleteDoc(postRef); toast({ title: "Success", description: "Post has been rejected and deleted." });
     } catch (error) { toast({ title: "Error", description: "Could not reject post.", variant: "destructive" }); }
   };
   
   const handleDismissReply = async (postId: string, replyId: string) => {
     const replyRef = doc(db, "forumPosts", postId, "replies", replyId);
-    try {
-        await updateDoc(replyRef, { status: "visible" });
-        toast({ title: "Success", description: "Reply has been dismissed and is now visible." });
+    try { await updateDoc(replyRef, { status: "visible" }); toast({ title: "Success", description: "Reply has been dismissed and is now visible." });
     } catch (error) { toast({ title: "Error", description: "Could not dismiss reply.", variant: "destructive" }); }
   };
 
   const handleDeleteReply = async (postId: string, replyId: string) => {
       const replyRef = doc(db, "forumPosts", postId, "replies", replyId);
       const postRef = doc(db, "forumPosts", postId);
-      try {
-          await deleteDoc(replyRef);
-          await updateDoc(postRef, { replies: increment(-1) });
-          toast({ title: "Success", description: "Reply has been deleted permanently." });
+      try { await deleteDoc(replyRef); await updateDoc(postRef, { replies: increment(-1) }); toast({ title: "Success", description: "Reply has been deleted permanently." });
       } catch (error) { toast({ title: "Error", description: "Could not delete reply.", variant: "destructive" }); }
   };
 
@@ -150,7 +139,8 @@ export function ModerationTools() {
                     <p className="text-sm text-muted-foreground mb-2">
                         Reply by <span className="font-medium">{reply.authorUsername}</span> on post: <a href={`/forum/${reply.postId}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{reply.postTitle}</a>
                     </p>
-                    <p className="text-sm bg-muted p-3 rounded-md">"{reply.content}"</p>
+                    {/* THIS IS THE FIX: Replaced " with &quot; */}
+                    <p className="text-sm bg-muted p-3 rounded-md">&quot;{reply.content}&quot;</p>
                     <div className="flex items-center space-x-2 mt-3">
                         <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent" onClick={() => handleDismissReply(reply.postId, reply.id)}><ShieldCheck className="mr-1 h-3 w-3" />Dismiss</Button>
                         <Button size="sm" variant="destructive" onClick={() => handleDeleteReply(reply.postId, reply.id)}><X className="mr-1 h-3 w-3" />Delete Reply</Button>

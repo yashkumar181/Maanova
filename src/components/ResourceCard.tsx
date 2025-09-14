@@ -8,6 +8,7 @@ interface ResourceCardProps {
   icon: LucideIcon;
   color: "mint" | "ocean" | "sage" | "primary";
   delay?: number;
+  onClick?: () => void;
 }
 
 export function ResourceCard({
@@ -16,6 +17,7 @@ export function ResourceCard({
   icon: Icon,
   color,
   delay = 0,
+  onClick,
 }: ResourceCardProps) {
   const colorClasses = {
     mint: "bg-mint border-mint-foreground/20 hover:bg-mint/80 hover:shadow-mint-foreground/20",
@@ -33,6 +35,7 @@ export function ResourceCard({
 
   return (
     <Card
+      onClick={onClick}
       className={cn(
         "group h-full cursor-pointer transition-all duration-500 ease-in-out hover:-translate-y-1 hover:shadow-lg animate-slide-up",
         colorClasses[color]

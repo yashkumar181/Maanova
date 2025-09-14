@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,7 +12,6 @@ import { collection, addDoc, serverTimestamp, getDoc, doc, updateDoc } from "fir
 import { auth, db } from "@/lib/firebase"
 import { useToast } from "./ui/use-toast"
 
-// The Message interface is now simpler
 interface Message {
     id: string
     content: string
@@ -36,11 +34,10 @@ export function ChatInterface() {
     const [userUid, setUserUid] = useState<string | null>(null)
     const [collegeId, setCollegeId] = useState<string | null>(null)
     const { toast } = useToast()
-    
-    // --- NEW STATE VARIABLES ---
     const [latestSessionId, setLatestSessionId] = useState<string | null>(null);
     const [showRatingArea, setShowRatingArea] = useState(false);
-    // ---------------------------
+    
+    const scrollViewportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -60,11 +57,10 @@ export function ChatInterface() {
     }, []);
 
     useEffect(() => {
-        const scrollArea = document.querySelector(".chat-scroll-area .viewport")
-        if (scrollArea) {
-            scrollArea.scrollTop = scrollArea.scrollHeight
+        if (scrollViewportRef.current) {
+            scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
         }
-    }, [messages, isTyping])
+    }, [messages, isTyping]);
 
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isTyping) return
@@ -107,7 +103,6 @@ export function ChatInterface() {
                 topic: topic,
             });
             
-            // --- NEW: Store the latest session ID for rating later ---
             setLatestSessionId(chatSessionRef.id);
 
             const botResponse: Message = {
@@ -134,7 +129,6 @@ export function ChatInterface() {
         }
     }
     
-    // --- UPDATED: Rating function now uses the stored session ID ---
     const handleRateSession = async (rating: number) => {
         if (!latestSessionId) {
             toast({ title: "Error", description: "No session to rate. Please send a message first.", variant: "destructive" });
@@ -145,7 +139,7 @@ export function ChatInterface() {
             const sessionRef = doc(db, "chatSessions", latestSessionId);
             await updateDoc(sessionRef, { rating: rating });
             
-            setShowRatingArea(false); // Hide the rating area after submission
+            setShowRatingArea(false); 
             toast({ title: "Thank you for your feedback!" });
         } catch (error) {
             console.error("Error submitting rating:", error);
@@ -166,7 +160,7 @@ export function ChatInterface() {
                 <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-primary/10 rounded-full"><Bot className="h-6 w-6 text-primary" /></div><div><h2 className="text-xl font-semibold">AI Mental Health Support</h2><p className="text-sm text-muted-foreground">Confidential chat support available 24/7</p></div></div>
                 <Alert className="mb-6 border-primary/20 bg-primary/5"><AlertCircle className="h-4 w-4 text-primary" /><AlertDescription className="text-sm">This AI provides initial support and coping strategies. For immediate crisis support, call 988 or contact campus emergency services.</AlertDescription></Alert>
 
-                <ScrollArea className="h-96 mb-4 p-4 border rounded-lg chat-scroll-area">
+                <ScrollArea className="h-96 mb-4 p-4 border rounded-lg" viewportRef={scrollViewportRef}>
                     <div className="space-y-4">
                         {messages.map((message) => (
                             <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
@@ -176,7 +170,6 @@ export function ChatInterface() {
                                     </div>
                                     <div className={`p-3 rounded-lg ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                                         <p className="text-sm leading-relaxed">{message.content}</p>
-                                        {/* Individual message rating UI is now removed */}
                                         {message.type === "crisis" && ( <div className="mt-3 pt-3 border-t border-destructive/20"><Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={() => window.open("tel:988", "_self")}><Phone className="mr-2 h-3 w-3" /> Call Crisis Line: 988</Button></div> )}
                                         {message.type === "referral" && ( <div className="mt-3 pt-3 border-t border-accent/20"><Button size="sm" variant="outline" className="border-accent text-accent hover:bg-accent/10 bg-transparent" onClick={() => window.location.href = "/booking"}>Book Counselor Appointment</Button></div> )}
                                     </div>
@@ -187,7 +180,6 @@ export function ChatInterface() {
                     </div>
                 </ScrollArea>
 
-                {/* --- NEW: Conditional UI for Chat Input OR Rating Area --- */}
                 {!showRatingArea ? (
                     <>
                         <div className="flex space-x-2">
@@ -210,7 +202,6 @@ export function ChatInterface() {
                         </div>
                     </div>
                 )}
-                {/* -------------------------------------------------------- */}
             </div>
         </Card>
     )

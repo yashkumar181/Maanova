@@ -11,6 +11,7 @@ import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIc
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import ThemeToggle from "@/components/ThemeToggle"
+import { Avatar, AvatarFallback } from "./ui/avatar" // Added this import
 
 interface StudentData {
   username: string;
@@ -48,12 +49,16 @@ export function Navigation() {
     }
   };
 
+  // 1. Create a function to close the mobile menu
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   const navLinks = (
+    // 2. Add the onClick handler to each link
     <>
-      <Link href="/"><Button variant="ghost" className="w-full justify-start md:w-auto"><MessageCircle className="mr-2 h-4 w-4" />Chat Support</Button></Link>
-      <Link href="/booking"><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />Book Counselor</Button></Link>
-      <Link href="/resources"><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />Resources</Button></Link>
-      <Link href="/forum"><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />Peer Support</Button></Link>
+      <Link href="/" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><MessageCircle className="mr-2 h-4 w-4" />Chat Support</Button></Link>
+      <Link href="/booking" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />Book Counselor</Button></Link>
+      <Link href="/resources" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />Resources</Button></Link>
+      <Link href="/forum" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />Peer Support</Button></Link>
     </>
   );
 
@@ -61,7 +66,7 @@ export function Navigation() {
     <header className="bg-card border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
             <Heart className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-foreground">MindCare</span>
           </Link>
@@ -74,15 +79,14 @@ export function Navigation() {
               <Skeleton className="h-10 w-24 rounded-md" />
             ) : user && studentData ? (
               <DropdownMenu>
-                {/* --- THIS IS THE CHANGE --- */}
-                {/* We are now using a simple Button instead of an Avatar */}
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    {studentData.username}
+                  {/* Using the Avatar again as it should be fixed now */}
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>{studentData.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                {/* --------------------------- */}
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
@@ -120,8 +124,8 @@ export function Navigation() {
           {navLinks}
            {!user && !loading && (
              <div className="border-t pt-4 space-y-2">
-                <Link href="/login"><Button variant="outline" className="w-full">Login</Button></Link>
-                <Link href="/register"><Button className="w-full">Register</Button></Link>
+                <Link href="/login" onClick={closeMobileMenu}><Button variant="outline" className="w-full">Login</Button></Link>
+                <Link href="/register" onClick={closeMobileMenu}><Button className="w-full">Register</Button></Link>
              </div>
            )}
         </div>

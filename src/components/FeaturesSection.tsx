@@ -49,11 +49,18 @@ export default function FeaturesSection() {
       {features.map((feature, index) => (
         <ResourceCard
           key={feature.title}
-          {...feature}
+          title={feature.title}
+          description={feature.description}
+          icon={feature.icon}
+          color={feature.color}
           delay={index}
-          onClick={() => setSelectedFeature(feature)}
+          onClick={() => {
+            console.log("Clicked:", feature.title);
+            setSelectedFeature(feature);
+          }}
         />
       ))}
+
 
       {/* Modal */}
       {selectedFeature && (

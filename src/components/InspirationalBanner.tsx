@@ -172,6 +172,6 @@ export function InspirationalBanner() {
         <div className="absolute top-8 right-1/3 w-1 h-1 bg-ocean rounded-full animate-bounce-gentle" style={{ animationDelay: '1s' }}></div>
         <div className="absolute bottom-4 left-1/3 w-1.5 h-1.5 bg-sage rounded-full animate-bounce-gentle" style={{ animationDelay: '2s' }}></div>
       </div>
-    </div>
+    </>
   );
 }

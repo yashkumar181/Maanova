@@ -72,8 +72,8 @@ export function InspirationalBanner() {
 
             {/* Login Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-3">
+              <a href="https://mental-health-platform-eosin.vercel.app/"
               <Button 
-                variant="ghost" 
                 size="sm"
                 onClick={() => handleLogin('student')}
                 className="hover:bg-primary/10"
@@ -81,6 +81,8 @@ export function InspirationalBanner() {
                 <UserCheck className="h-4 w-4 mr-1" />
                 Student Login
               </Button>
+              </a>
+              <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
               <Button 
                 size="sm"
                 onClick={() => handleLogin('admin')}
@@ -89,6 +91,7 @@ export function InspirationalBanner() {
                 <ShieldCheck className="h-4 w-4 mr-1" />
                 Admin Login
               </Button>
+              </a>
             </div>
 
             {/* Mobile Menu Button */}

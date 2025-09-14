@@ -72,7 +72,7 @@ export function InspirationalBanner() {
 
             {/* Login Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-3">
-              <a href="https://mental-health-platform-eosin.vercel.app/"
+              <a href="https://mental-health-platform-eosin.vercel.app/">
               <Button 
                 size="sm"
                 onClick={() => handleLogin('student')}
@@ -125,6 +125,7 @@ export function InspirationalBanner() {
                 Helplines
               </button>
               <div className="border-t border-border/30 pt-3 space-y-2">
+                <a href="https://mental-health-platform-eosin.vercel.app/">
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -134,6 +135,8 @@ export function InspirationalBanner() {
                   <UserCheck className="h-4 w-4 mr-2" />
                   Student Login
                 </Button>
+                </a>
+                <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
                 <Button 
                   size="sm"
                   onClick={() => handleLogin('admin')}
@@ -142,6 +145,7 @@ export function InspirationalBanner() {
                   <ShieldCheck className="h-4 w-4 mr-2" />
                   Admin Login
                 </Button>
+                </a>
               </div>
             </div>
           )}

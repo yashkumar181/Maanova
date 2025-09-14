@@ -9,7 +9,6 @@ import { Heart, MessageCircle, Clock, Pin, Flag, MoreHorizontal } from "lucide-r
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/useAuth"
 import { db } from "@/lib/firebase"
-// CORRECTED: Added all necessary imports from firestore
 import { doc, updateDoc, increment, collection, onSnapshot, writeBatch, query, where, QuerySnapshot } from "firebase/firestore"
 import Link from "next/link"
 
@@ -36,32 +35,24 @@ export function ForumPost({ post }: ForumPostProps) {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [replyCount, setReplyCount] = useState(post.replies); // <-- NEW: State for reply count
 
-  // CORRECTED: This useEffect now correctly sets up the real-time listener for likes
   useEffect(() => {
     if (!user) return;
-    
-    // Define the collection of 'likes' for this specific post
     const likesRef = collection(db, "forumPosts", post.id, "likes");
-    // Create a query to find a 'like' from the current user
     const q = query(likesRef, where("userId", "==", user.uid));
-
-    // Set up the real-time listener
     const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot) => {
-      // If the snapshot is not empty, it means the user has liked this post
       setIsLiked(!snapshot.empty);
     });
-
-    // Clean up the listener when the component unmounts
     return () => unsubscribe();
   }, [user, post.id]);
 
-  // This effect keeps the like count in sync with the database
   useEffect(() => {
     const postRef = doc(db, "forumPosts", post.id);
     const unsubscribe = onSnapshot(postRef, (doc) => {
       if (doc.exists()) {
         setLikeCount(doc.data().likes || 0);
+        setReplyCount(doc.data().replies || 0); // <-- NEW: Update reply count from Firestore
       }
     });
     return () => unsubscribe();
@@ -71,7 +62,6 @@ export function ForumPost({ post }: ForumPostProps) {
     if (!user) return;
     const postRef = doc(db, "forumPosts", post.id);
     const likeRef = doc(collection(db, "forumPosts", post.id, "likes"), user.uid);
-
     try {
       const batch = writeBatch(db);
       if (isLiked) {
@@ -122,12 +112,8 @@ export function ForumPost({ post }: ForumPostProps) {
             </div>
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem><Flag className="mr-2 h-4 w-4" />Report Post</DropdownMenuItem>
-            </DropdownMenuContent>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end"><DropdownMenuItem><Flag className="mr-2 h-4 w-4" />Report Post</DropdownMenuItem></DropdownMenuContent>
           </DropdownMenu>
         </div>
 
@@ -142,26 +128,21 @@ export function ForumPost({ post }: ForumPostProps) {
 
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-border">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={`flex items-center space-x-1 ${isLiked ? "text-red-500" : "text-muted-foreground"}`}
-              disabled={!user}
-            >
+            <Button variant="ghost" size="sm" onClick={handleLike} className={`flex items-center space-x-1 ${isLiked ? "text-red-500" : "text-muted-foreground"}`} disabled={!user}>
               <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
               <span className="text-sm">{likeCount}</span>
             </Button>
             <div className="flex items-center space-x-1 text-muted-foreground">
               <MessageCircle className="h-4 w-4" />
-              <span className="text-sm">{post.replies} replies</span>
+              <span className="text-sm">{replyCount} replies</span>
             </div>
           </div>
+          {/* UPDATED: This button is now a link to the detailed post page */}
           <Button asChild variant="outline" size="sm" className="bg-transparent">
             <Link href={`/forum/${post.id}`}>View Discussion</Link>
           </Button>
         </div>
       </div>
     </Card>
-  )
+  );
 }

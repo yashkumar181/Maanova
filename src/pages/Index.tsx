@@ -56,34 +56,11 @@ const Index = () => {
               Your mental health journey matters, and you're not alone.
             </p>
           </div>
-
-          {/* Login Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-20 animate-slide-up">
-            <a href="https://mental-health-platform-eosin.vercel.app/">
-              <Button 
-              size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"
-            >
-              <UserCheck className="mr-2 h-5 w-5" />
-              Student Access
-            </Button>
-            </a>
-            <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
-              <Button 
-              variant="outline" 
-              size="lg"
-              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"
-            >
-              <ShieldCheck className="mr-2 h-5 w-5" />
-              Admin Login
-            </Button>
-            </a>
-          </div>
         </div>
       </section>
 
       {/* Vision Section */}
-      <section className="py-20 px-4 bg-gradient-card">
+      <section id="vision" className="py-20 px-4 bg-gradient-card">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Our Vision</h2>
@@ -143,7 +120,7 @@ const Index = () => {
       </section>
 
       {/* Resource Cards Section */}
-      <section className="py-20 px-4">
+      <section id="resources" className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Mental Health Resources</h2>
@@ -200,7 +177,7 @@ const Index = () => {
       </section>
 
       {/* Indian Helplines Section */}
-      <section className="py-20 px-4 bg-muted/30">
+      <section id="helplines" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Emergency Helplines</h2>

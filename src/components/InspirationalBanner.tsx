@@ -86,9 +86,8 @@ export function InspirationalBanner() {
                 Admin Login
               </Button>
               </a>
+              <ThemeToggle />
             </div>
-
-            <ThemeToggle />
 
             {/* Mobile Menu Button */}
             <button

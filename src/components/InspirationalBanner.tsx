@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FloatingElement } from "./FloatingElement";
 import { Button } from "./ui/button";
 import { Sparkles, Heart, Menu, X, UserCheck, ShieldCheck } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileThemeToggle, ThemeToggle } from "@/components/ThemeToggle";
 
 const inspirationalPhrases = [
   "Every step forward is progress 💚",
@@ -90,11 +90,11 @@ export function InspirationalBanner() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div>
-              <ThemeToggle />
+            <div className="flex items-center gap-2 md:hidden">
+              <MobileThemeToggle />
               <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-foreground hover:text-primary transition-colors"
+              className="p-2 text-foreground hover:text-primary transition-colors"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>

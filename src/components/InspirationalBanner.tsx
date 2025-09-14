@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FloatingElement } from "./FloatingElement";
-import { Sparkles, Heart } from "lucide-react";
+import { Button } from "./ui/button";
+import { Sparkles, Heart, Menu, X, UserCheck, ShieldCheck } from "lucide-react";
 
 const inspirationalPhrases = [
   "Every step forward is progress 💚",
@@ -12,6 +13,7 @@ const inspirationalPhrases = [
 
 export function InspirationalBanner() {
   const [currentPhrase, setCurrentPhrase] = useState(0);
+   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -20,28 +22,152 @@ export function InspirationalBanner() {
     return () => clearInterval(interval);
   }, []);
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setMobileMenuOpen(false);
+  };
+
+  const handleLogin = (type: 'student' | 'admin') => {
+    // TODO: Implement login functionality
+    console.log(`${type} login clicked`);
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <div className="relative overflow-hidden bg-gradient-hero py-6 border-b border-border/50">
-      <div className="container mx-auto px-4">
-        <div className="relative text-center">
-          <FloatingElement className="absolute -left-8 top-0" delay={0}>
-            <Sparkles className="h-6 w-6 text-primary animate-pulse-soft" />
-          </FloatingElement>
-          
-          <div className="animate-fade-in">
-            <p className="text-lg font-medium gradient-text transition-all duration-1000">
-              {inspirationalPhrases[currentPhrase]}
-            </p>
+    <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
+      {/* Navigation Header */}
+      <nav className="relative z-50 py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            {/* Logo/Brand */}
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold gradient-text">MindSpace</span>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-8">
+              <button 
+                onClick={() => scrollToSection('vision')}
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
+                Vision
+              </button>
+              <button 
+                onClick={() => scrollToSection('resources')}
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
+                Resources
+              </button>
+              <button 
+                onClick={() => scrollToSection('helplines')}
+                className="text-foreground hover:text-primary transition-colors font-medium"
+              >
+                Helplines
+              </button>
+            </div>
+
+            {/* Login Buttons - Desktop */}
+            <div className="hidden md:flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => handleLogin('student')}
+                className="hover:bg-primary/10"
+              >
+                <UserCheck className="h-4 w-4 mr-1" />
+                Student Login
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => handleLogin('admin')}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <ShieldCheck className="h-4 w-4 mr-1" />
+                Admin Login
+              </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-foreground hover:text-primary transition-colors"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
-          
-          <FloatingElement className="absolute -right-8 top-0" delay={2}>
-            <Heart className="h-6 w-6 text-primary animate-pulse-soft" />
-          </FloatingElement>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border/50 py-4 px-4 space-y-3">
+              <button 
+                onClick={() => scrollToSection('vision')}
+                className="block w-full text-left py-2 px-3 text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors font-medium"
+              >
+                Vision
+              </button>
+              <button 
+                onClick={() => scrollToSection('resources')}
+                className="block w-full text-left py-2 px-3 text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors font-medium"
+              >
+                Resources
+              </button>
+              <button 
+                onClick={() => scrollToSection('helplines')}
+                className="block w-full text-left py-2 px-3 text-foreground hover:text-primary hover:bg-accent/50 rounded-md transition-colors font-medium"
+              >
+                Helplines
+              </button>
+              <div className="border-t border-border/30 pt-3 space-y-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => handleLogin('student')}
+                  className="w-full justify-start hover:bg-primary/10"
+                >
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Student Login
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => handleLogin('admin')}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Admin Login
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Inspirational Quote Section */}
+      <div className="py-6">
+        <div className="container mx-auto px-4">
+          <div className="relative text-center">
+            <FloatingElement className="absolute -left-8 top-0" delay={0}>
+              <Sparkles className="h-6 w-6 text-primary animate-pulse-soft" />
+            </FloatingElement>
+            
+            <div className="animate-fade-in">
+              <p className="text-lg font-medium gradient-text transition-all duration-1000">
+                {inspirationalPhrases[currentPhrase]}
+              </p>
+            </div>
+            
+            <FloatingElement className="absolute -right-8 top-0" delay={2}>
+              <Heart className="h-6 w-6 text-primary animate-pulse-soft" />
+            </FloatingElement>
+          </div>
         </div>
       </div>
       
       {/* Decorative dots */}
-      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute top-4 left-1/4 w-2 h-2 bg-primary rounded-full animate-bounce-gentle"></div>
         <div className="absolute top-8 right-1/3 w-1 h-1 bg-ocean rounded-full animate-bounce-gentle" style={{ animationDelay: '1s' }}></div>
         <div className="absolute bottom-4 left-1/3 w-1.5 h-1.5 bg-sage rounded-full animate-bounce-gentle" style={{ animationDelay: '2s' }}></div>

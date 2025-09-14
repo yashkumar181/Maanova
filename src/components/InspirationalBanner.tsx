@@ -44,7 +44,7 @@ export function InspirationalBanner() {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8  absolute left-1/2 transform -translate-x-1/2">
               <button 
                 onClick={() => scrollToSection('vision')}
                 className="text-foreground hover:text-primary transition-colors font-medium"
@@ -74,7 +74,7 @@ export function InspirationalBanner() {
                 text-primary-foreground"
               >
                 <UserCheck className="h-4 w-4 mr-1" />
-                Student Login
+                Student Access
               </Button>
               </a>
               <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/">
@@ -83,7 +83,7 @@ export function InspirationalBanner() {
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ShieldCheck className="h-4 w-4 mr-1" />
-                Admin Login
+                Admin Access
               </Button>
               </a>
               <ThemeToggle />
@@ -130,7 +130,7 @@ export function InspirationalBanner() {
                   text-primary-foreground"
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
-                  Student Login
+                  Student Access
                 </Button>
                 </a>
                 <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/" className="block">
@@ -139,7 +139,7 @@ export function InspirationalBanner() {
                   className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <ShieldCheck className="h-4 w-4 mr-2" />
-                  Admin Login
+                  Admin Access
                 </Button>
                 </a>
               </div>

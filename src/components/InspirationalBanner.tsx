@@ -76,7 +76,8 @@ export function InspirationalBanner() {
               <Button 
                 size="sm"
                 onClick={() => handleLogin('student')}
-                className="hover:bg-primary/10"
+                className="hover:bg-primary/90
+                text-primary-foreground"
               >
                 <UserCheck className="h-4 w-4 mr-1" />
                 Student Login

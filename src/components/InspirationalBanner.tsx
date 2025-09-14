@@ -146,6 +146,7 @@ export function InspirationalBanner() {
       </nav>
 
       {/* Inspirational Quote Section */}
+      <div className="relative overflow-hidden bg-gradient-hero border-b border-border/50 pt-20">
       <div className="py-6">
         <div className="container mx-auto px-4">
           <div className="relative text-center">
@@ -164,6 +165,7 @@ export function InspirationalBanner() {
             </FloatingElement>
           </div>
         </div>
+      </div>
       </div>
       
       {/* Decorative dots */}

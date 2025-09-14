@@ -3,8 +3,10 @@ import { GeistSans } from "geist/font/sans";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster"; // Import the Toaster
+import { Toaster } from "@/components/ui/toaster";
 import Script from "next/script";
+import { AuthProvider } from "@/hooks/useAuth";
+import { Navigation } from "@/components/navigation";
 
 export const metadata: Metadata = {
   title: "MindCare | Your Mental Health Platform",
@@ -19,20 +21,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable}`}>
-        {/* This ThemeProvider is essential for the dropdown to work */}
+        {/* 1. ThemeProvider is essential for UI components to work */}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster /> {/* This is needed for notifications */}
+          {/* 2. AuthProvider makes the login state available everywhere */}
+          <AuthProvider>
+            {/* 3. Navigation is now part of the layout for all pages */}
+            <Navigation />
+            <main>{children}</main>
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
         
         <Analytics />
         
-        {/* Use the Next.js Script component for external scripts */}
         <Script
           src="https://cdn.botpress.cloud/webchat/v3.2/inject.js"
           strategy="afterInteractive"
@@ -45,4 +51,3 @@ export default function RootLayout({
     </html>
   );
 }
-

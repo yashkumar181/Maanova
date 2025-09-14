@@ -2,66 +2,63 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { User, onAuthStateChanged, signOut } from "firebase/auth"
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore" // <-- NEW: Import serverTimestamp and updateDoc
+import { signOut } from "firebase/auth"
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon } from "lucide-react"
+import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon, Menu, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ThemeToggle from "@/components/ThemeToggle"
 
 interface StudentData {
   username: string;
   email: string;
-  collegeId: string;
 }
 
 export function Navigation() {
-  const [user, setUser] = useState<User | null>(null)
-  const [studentData, setStudentData] = useState<StudentData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading } = useAuth();
+  const [studentData, setStudentData] = useState<StudentData | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser)
-        const studentDocRef = doc(db, "students", currentUser.uid)
-        const studentSnap = await getDoc(studentDocRef)
+    const fetchStudentData = async () => {
+      if (user) {
+        const studentDocRef = doc(db, "students", user.uid);
+        const studentSnap = await getDoc(studentDocRef);
         if (studentSnap.exists()) {
-          setStudentData(studentSnap.data() as StudentData)
-          
-          // --- THIS IS THE FIX ---
-          // Update the lastActive timestamp every time the user's session is active.
-          try {
-            await updateDoc(studentDocRef, {
-              lastActive: serverTimestamp(),
-            });
-          } catch (error) {
-            console.error("Error updating lastActive timestamp:", error);
-          }
-          // --------------------------
+          setStudentData(studentSnap.data() as StudentData);
+          await updateDoc(studentDocRef, { lastActive: serverTimestamp() });
         }
       } else {
-        setUser(null)
-        setStudentData(null)
+        setStudentData(null);
       }
-      setLoading(false)
-    })
-    return () => unsubscribe()
-  }, [])
+    };
+    if (!loading) {
+      fetchStudentData();
+    }
+  }, [user, loading]);
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth)
+      await signOut(auth);
     } catch (error) {
-      console.error("Error signing out:", error)
+      console.error("Error signing out:", error);
     }
-  }
+  };
+
+  const navLinks = (
+    <>
+      <Link href="/"><Button variant="ghost" className="w-full justify-start md:w-auto"><MessageCircle className="mr-2 h-4 w-4" />Chat Support</Button></Link>
+      <Link href="/booking"><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />Book Counselor</Button></Link>
+      <Link href="/resources"><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />Resources</Button></Link>
+      <Link href="/forum"><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />Peer Support</Button></Link>
+    </>
+  );
 
   return (
-    <nav className="bg-card border-b border-border">
+    <header className="bg-card border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-2">
@@ -69,27 +66,23 @@ export function Navigation() {
             <span className="text-xl font-bold text-foreground">MindCare</span>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-1">
-            <Link href="/"><Button variant="ghost" className="flex items-center space-x-2"><MessageCircle className="h-4 w-4" /><span>Chat Support</span></Button></Link>
-            <Link href="/booking"><Button variant="ghost" className="flex items-center space-x-2"><Calendar className="h-4 w-4" /><span>Book Counselor</span></Button></Link>
-            <Link href="/resources"><Button variant="ghost" className="flex items-center space-x-2"><BookOpen className="h-4 w-4" /><span>Resources</span></Button></Link>
-            <Link href="/forum"><Button variant="ghost" className="flex items-center space-x-2"><Users className="h-4 w-4" /><span>Peer Support</span></Button></Link>
-          </div>
+          <div className="hidden md:flex items-center space-x-1">{navLinks}</div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <ThemeToggle />
             {loading ? (
               <Skeleton className="h-10 w-24 rounded-md" />
             ) : user && studentData ? (
               <DropdownMenu>
+                {/* --- THIS IS THE CHANGE --- */}
+                {/* We are now using a simple Button instead of an Avatar */}
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder.svg" alt={studentData.username} />
-                      <AvatarFallback>{studentData.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
+                  <Button variant="outline">
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    {studentData.username}
                   </Button>
                 </DropdownMenuTrigger>
+                {/* --------------------------- */}
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
@@ -98,21 +91,41 @@ export function Navigation() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" /><span>My Profile</span></DropdownMenuItem></Link>
+                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" />My Profile</DropdownMenuItem></Link>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" /><span>Sign Out</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign Out</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="space-x-2">
+              <div className="hidden md:flex items-center space-x-2">
                 <Link href="/login"><Button variant="ghost">Login</Button></Link>
                 <Link href="/register"><Button>Register</Button></Link>
               </div>
             )}
+            
+            <div className="md:hidden">
+              <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </nav>
+
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-border p-4 space-y-2">
+          {navLinks}
+           {!user && !loading && (
+             <div className="border-t pt-4 space-y-2">
+                <Link href="/login"><Button variant="outline" className="w-full">Login</Button></Link>
+                <Link href="/register"><Button className="w-full">Register</Button></Link>
+             </div>
+           )}
+        </div>
+      )}
+    </header>
   )
 }
-

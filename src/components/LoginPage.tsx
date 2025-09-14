@@ -5,22 +5,28 @@ import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from "../lib/firebase-config";
+import { useToast } from './ui/use-toast';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { ThemeToggle } from './ThemeToggle';
+import Link from 'next/link';
 
 export function LoginPage() {
   const [collegeId, setCollegeId] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setMessage('');
 
     if (!collegeId || !username || !password) {
-      setMessage('❌ Please fill all fields!');
+      toast({ title: "Error", description: "Please fill in all fields.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -31,85 +37,58 @@ export function LoginPage() {
 
       if (docSnap.exists() && docSnap.data().username === username) {
         const adminData = docSnap.data();
-        const adminEmail = adminData.gmail;
-
-        await signInWithEmailAndPassword(auth, adminEmail, password);
+        await signInWithEmailAndPassword(auth, adminData.gmail, password);
         
-        setMessage('✅ Login Successful! Redirecting...');
-        // On success, navigate to the dashboard within the same app
+        toast({ title: "Login Successful!", description: "Redirecting to your dashboard..." });
         router.push('/'); 
 
       } else {
-        setMessage('❌ Invalid College ID or Username!');
+        toast({ title: "Error", description: "Invalid College ID or Username.", variant: "destructive" });
       }
     } catch (error) {
       console.error(error);
-      setMessage('❌ Invalid credentials or network error.');
+      toast({ title: "Login Failed", description: "Invalid credentials or a network error occurred.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-gray-200">Admin Login</h2>
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label htmlFor="collegeId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">College Unique ID</label>
-            <input
-              type="text"
-              id="collegeId"
-              value={collegeId}
-              onChange={(e) => setCollegeId(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200"
-              required
-            />
-          </div>
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-200"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400"
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-          {message && (
-            <p className={`mt-4 text-sm text-center ${message.includes('❌') ? 'text-red-600' : 'text-green-600'}`}>
-              {message}
-            </p>
-          )}
-        </form>
-        <div className="text-center mt-4">
-  <p className="text-sm text-gray-600 dark:text-gray-400">
-    New college?{' '}
-    <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-      Register here
-    </a>
-  </p>
-</div>
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
       </div>
+      <Card className="w-full max-w-md border-t-4 border-primary">
+        <CardHeader className="text-center">
+          <CardTitle>Admin Portal Login</CardTitle>
+          <CardDescription>Welcome back. Please sign in to continue.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="collegeId">College Unique ID</Label>
+              <Input id="collegeId" type="text" placeholder="e.g., CLG-ABC123XYZ" value={collegeId} onChange={(e) => setCollegeId(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input id="username" type="text" placeholder="Your username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Signing In...' : 'Sign In'}</Button>
+          </form>
+        </CardContent>
+        <CardFooter className="flex justify-center text-sm">
+           <p className="text-muted-foreground">
+                New to the platform?{' '}
+                <Link href="/register" className="font-medium text-primary hover:underline">
+                  Register here
+                </Link>
+            </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -156,7 +156,6 @@ export function ModerationTools() {
                   <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50 bg-transparent" onClick={() => handleReject(post.id)}>
                     <X className="mr-1 h-3 w-3" />Reject
                   </Button>
-                  <Button size="sm" variant="outline" className="bg-transparent"><MessageCircle className="mr-1 h-3 w-3" />Contact User</Button>
                 </div>
               </div>
             ))

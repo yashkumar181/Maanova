@@ -1,7 +1,9 @@
+// src/components/overview-metrics.tsx
+
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { TrendingUp, Users, MessageCircle, Calendar, BookOpen, Star } from "lucide-react" // Removed AlertTriangle, added Star
+import { TrendingUp, Users, MessageCircle, Calendar, BookOpen, Star } from "lucide-react"
 import { useState, useEffect } from "react"
 import { collection, query, where, Timestamp, getDocs, onSnapshot } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
@@ -19,7 +21,7 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     counselorBookings: 0,
     resourcesAccessed: 0,
     forumPosts: 0,
-    avgSessionRating: 0, // <-- NEW METRIC
+    avgSessionRating: 0,
   });
   const [loading, setLoading] = useState(true);
   const [collegeId, setCollegeId] = useState<string | null>(null);
@@ -67,7 +69,6 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
       forum: query(collection(db, "forumPosts"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
     };
 
-    // This listener will now also calculate the average rating from chat sessions
     const unsubChat = onSnapshot(queries.chatSessions, (snapshot) => {
         let totalRating = 0;
         let ratedSessions = 0;
@@ -102,13 +103,12 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     { title: "Counselor Bookings", value: metrics.counselorBookings, icon: Calendar, description: "Appointments scheduled", change: "+23%" },
     { title: "Resources Accessed", value: metrics.resourcesAccessed, icon: BookOpen, description: "Guides and articles viewed", change: "+15%" },
     { title: "Forum Posts", value: metrics.forumPosts, icon: MessageCircle, description: "New peer support discussions", change: "+5%" },
-    // --- CHANGE 2: REPLACED "CRISIS" WITH "AVG. RATING" ---
     { title: "Avg. Session Rating", value: metrics.avgSessionRating.toFixed(1), icon: Star, description: "Average user feedback", change: "+0.1" },
   ];
 
   if (loading) {
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"> {/* <-- RESPONSIVE SKELETON */}
             {Array.from({ length: 6 }).map((_, index) => (
                 <Card key={index} className="p-6 space-y-2"><Skeleton className="h-6 w-6 rounded-full" /><Skeleton className="h-8 w-1/2" /><Skeleton className="h-4 w-3/4" /></Card>
             ))}
@@ -117,9 +117,14 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+    // <-- 1. RESPONSIVENESS: Updated grid columns for different screen sizes.
+    // - `grid-cols-1`: 1 column on mobile (default)
+    // - `sm:grid-cols-2`: 2 columns on small screens and up
+    // - `lg:grid-cols-3`: 3 columns on large screens and up
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {metricDisplayData.map((metric) => (
-        <Card key={metric.title} className="p-6">
+        // <-- 2. UI POLISH: Added transition and hover effects to the Card.
+        <Card key={metric.title} className="p-6 transition-all hover:shadow-lg hover:border-primary/50 cursor-pointer">
             <div className="flex items-center justify-between mb-4">
                 <metric.icon className="h-6 w-6 text-muted-foreground" />
                 <div className="flex items-center text-sm font-medium text-green-600"><TrendingUp className="h-4 w-4 mr-1" />{metric.change}</div>
@@ -134,4 +139,3 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     </div>
   )
 }
-

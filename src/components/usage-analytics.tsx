@@ -67,7 +67,6 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
     const fetchData = async () => {
       setLoading(true);
 
-      // FIX 1: Use a helper function to calculate the start date, allowing us to use 'const'
       const getStartDate = (): Date => {
         const date = new Date();
         switch (dateRange) {
@@ -132,7 +131,6 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
 
             if (!dailyData[day]) dailyData[day] = { day, chatSessions: 0, bookings: 0, resources: 0, forum: 0 };
             
-            // FIX 2: Replace 'as any' with a type-safe key to satisfy the linter
             const key = doc.type as keyof Omit<DailyUsage, 'day'>;
             if (key in dailyData[day]) {
                 dailyData[day][key]++;
@@ -152,7 +150,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
           { name: "Forum", value: forumSnap.size, color: "#a855f7" },
         ]);
 
-      } catch (error: unknown) { // Also make the catch block type-safe
+      } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error fetching usage analytics:", error.message);
         } else {
@@ -172,7 +170,8 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* <-- RESPONSIVENESS: This grid now stacks on mobile and is 2 columns on medium screens and up. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Daily Feature Usage</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -203,27 +202,25 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* <-- RESPONSIVENESS: This grid also stacks on mobile now. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Feature Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              
-<Pie
-  data={featureUsage}
-  cx="50%"
-  cy="50%"
-  outerRadius={80}
-  fill="#8884d8"
-  dataKey="value"
-  label={({ name }) => name}
->
-  {featureUsage.map((entry, index) => (
-    <Cell key={`cell-${index}`} fill={entry.color} />
-  ))}
-</Pie>
-
-
+              <Pie
+                data={featureUsage}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name }) => name}
+              >
+                {featureUsage.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
@@ -231,7 +228,6 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
 
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Top Resources</h3>
-          {/* This would also be populated by live data, but is kept static for brevity */}
           <div className="space-y-3">
             <div className="flex justify-between items-center"><span className="text-sm">Breathing Techniques Video</span><span className="text-sm font-medium">234 views</span></div>
             <div className="flex justify-between items-center"><span className="text-sm">Study Stress Guide</span><span className="text-sm font-medium">189 downloads</span></div>
@@ -242,4 +238,3 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
     </div>
   )
 }
-

@@ -11,9 +11,8 @@ import {
   BookOpen, 
   UserCheck,
   Bot,
-  BookOpen,
   BarChart3,
-  TrendingUp
+  TrendingUp,
   Smile,
   MessageCircle,
   ShieldCheck,

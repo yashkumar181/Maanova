@@ -1,128 +1,177 @@
-"use client"
+// src/components/appointment-viewer.tsx (Updated & Corrected)
 
-import { useState, useEffect } from "react"
-import { collection, query, where, onSnapshot, getDocs, doc, getDoc, updateDoc, orderBy } from "firebase/firestore"
-import { onAuthStateChanged } from "firebase/auth"
-import { auth, db } from "../lib/firebase-config"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { useToast } from "./ui/use-toast"
-import { Check, X, Video } from "lucide-react"
+"use client";
+
+import { useState, useEffect } from "react";
+import { collection, query, where, onSnapshot, orderBy, Timestamp, doc, updateDoc, getDocs } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth"; // ✨ NEW: Import
+import { db, auth } from "@/lib/firebase-config"; // ✨ NEW: Import auth
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
+import { useToast } from "./ui/use-toast";
+import { VideoCallModal } from './VideoCallModal';
+import { Video, Users, Check, X } from "lucide-react";
 
 interface Appointment {
-  id: string; studentName: string; counselorName: string; date: Date; time: string; status: 'pending' | 'confirmed' | 'cancelled'; meetingUrl?: string; hostUrl?: string;
+  id: string;
+  studentName?: string;
+  requestedTime: Timestamp;
+  status: 'pending' | 'accepted' | 'declined';
+  appointmentType: 'online' | 'offline';
+  meetingLink?: string;
+  reason?: string;
 }
 
 export function AppointmentViewer() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [collegeId, setCollegeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [linkInputs, setLinkInputs] = useState<{ [key: string]: string }>({});
+  const [activeMeetingUrl, setActiveMeetingUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => { if (user) { const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid)); const adminSnapshot = await getDocs(adminQuery); if (!adminSnapshot.empty) { setCollegeId(adminSnapshot.docs[0].id); } else { setLoading(false); } } else { setLoading(false); } }); return () => unsubscribeAuth();
-  }, []);
+    setLoading(true);
 
-  useEffect(() => {
-    if (!collegeId) return;
-    const bookingsQuery = query(collection(db, "bookings"), where("collegeId", "==", collegeId), orderBy("date", "desc"));
-    const unsubscribe = onSnapshot(bookingsQuery, async (snapshot) => {
-      const fetchedAppointments = await Promise.all(snapshot.docs.map(async (bookingDoc) => {
-        const bookingData = bookingDoc.data();
-        const studentSnap = await getDoc(doc(db, "students", bookingData.studentUid));
-        const counselorSnap = await getDoc(doc(db, "counselors", bookingData.counselorId));
-        return { id: bookingDoc.id, studentName: studentSnap.exists() ? studentSnap.data().username : "Unknown", counselorName: counselorSnap.exists() ? counselorSnap.data().name : "Unknown", date: bookingData.date.toDate(), time: bookingData.time, status: bookingData.status, meetingUrl: bookingData.meetingUrl, hostUrl: bookingData.hostUrl, } as Appointment;
-      }));
+    const appointmentsQuery = query(
+      collection(db, "appointments"),
+      orderBy("requestedTime", "desc")
+    );
+
+    const unsubscribe = onSnapshot(appointmentsQuery, (snapshot) => {
+      const fetchedAppointments = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as Appointment));
+      
+      console.log("Fetched all appointments:", fetchedAppointments); // For debugging
       setAppointments(fetchedAppointments);
       setLoading(false);
     });
+
+    // Cleanup the listener when the component unmounts
     return () => unsubscribe();
-  }, [collegeId]);
+    
+  }, []); // Effect runs once on component mount
 
-  const handleConfirmAppointment = async (appointmentId: string) => {
+  const handleUpdateStatus = async (id: string, status: 'accepted' | 'declined') => {
+    const appointmentRef = doc(db, "appointments", id);
     try {
-      // THIS IS THE FIX: Use the full URL of your DEPLOYED student platform's API
-      const studentPlatformUrl = 'https://mental-health-platform-fm71ny3y5-yashkumar181s-projects.vercel.app';
-
-      const response = await fetch(`${studentPlatformUrl}/api/create-meeting`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appointmentId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create video meeting room.');
-      }
-
-      const { meetingUrl, hostUrl } = await response.json();
-      const appointmentRef = doc(db, "bookings", appointmentId);
-      await updateDoc(appointmentRef, { status: "confirmed", meetingUrl: meetingUrl, hostUrl: hostUrl });
-      toast({ title: "Success", description: "Appointment confirmed and video link created." });
+      await updateDoc(appointmentRef, { status });
+      toast({ title: "Success", description: `Appointment has been ${status}.` });
     } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-      toast({ title: "Error", description: `Could not confirm appointment: ${errorMessage}`, variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update status.", variant: "destructive" });
     }
   };
 
-  const handleCancelAppointment = async (appointmentId: string) => {
-    if (!window.confirm("Are you sure?")) return;
+// src/components/appointment-viewer.tsx
+
+  const handleSaveLink = async (id: string) => {
+    const link = linkInputs[id];
+    // 🔧 MODIFIED: This line is now less strict to allow for your custom URL
+    if (!link || !link.includes(".whereby.com/")) { 
+        toast({ title: "Invalid Link", description: "Please provide a valid Whereby meeting link.", variant: "destructive"});
+        return;
+    }
+    const appointmentRef = doc(db, "appointments", id);
     try {
-      const appointmentRef = doc(db, "bookings", appointmentId);
-      await updateDoc(appointmentRef, { status: "cancelled" });
-      toast({ title: "Appointment Cancelled" });
+      await updateDoc(appointmentRef, { meetingLink: link });
+      toast({ title: "Success", description: "Meeting link has been saved." });
     } catch (error) {
-      toast({ title: "Error", description: "Could not cancel appointment.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save the link.", variant: "destructive" });
     }
   };
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'confirmed': return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
-      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'cancelled': return <Badge variant="destructive">Cancelled</Badge>;
-      default: return <Badge variant="secondary">{status}</Badge>;
-    }
+
+  const handleInputChange = (id: string, value: string) => {
+      setLinkInputs(prev => ({ ...prev, [id]: value }));
+  };
+
+  if (loading) {
+    return <Skeleton className="h-64 w-full" />;
   }
 
   return (
-    <Card>
-      <CardHeader><CardTitle>Manage Appointments</CardTitle></CardHeader>
-      <CardContent>
-        {loading ? <p>Loading...</p> : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Counsellor</TableHead><TableHead>Date & Time</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {appointments.length > 0 ? appointments.map(appt => (
+    <>
+      {activeMeetingUrl && (
+        <VideoCallModal
+          isOpen={!!activeMeetingUrl}
+          roomUrl={activeMeetingUrl}
+          onClose={() => setActiveMeetingUrl(null)}
+        />
+      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Appointment Requests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Student</TableHead>
+                <TableHead>Date & Time</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {appointments.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">No appointments found.</TableCell>
+                </TableRow>
+              ) : (
+                appointments.map((appt) => (
                   <TableRow key={appt.id}>
                     <TableCell className="font-medium">{appt.studentName}</TableCell>
-                    <TableCell>{appt.counselorName}</TableCell>
-                    <TableCell>{appt.date.toLocaleDateString()} at {appt.time}</TableCell>
-                    <TableCell>{getStatusBadge(appt.status)}</TableCell>
-                    <TableCell className="text-right space-x-2 whitespace-nowrap">
-                      {appt.status === 'pending' && (
-                        <>
-                          <Button size="icon" className="bg-green-600 hover:bg-green-700 h-8 w-8" onClick={() => handleConfirmAppointment(appt.id)}><Check className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleCancelAppointment(appt.id)}><X className="h-4 w-4" /></Button>
-                        </>
-                      )}
-                      {appt.status === 'confirmed' && (
-                        <Button asChild size="sm" variant="outline">
-                          <a href={appt.hostUrl} target="_blank" rel="noopener noreferrer"><Video className="mr-2 h-4 w-4"/> Join Call</a>
-                        </Button>
-                      )}
+                    <TableCell>{appt.requestedTime.toDate().toLocaleString()}</TableCell>
+                    <TableCell>
+                       <Badge variant={appt.appointmentType === 'online' ? 'default' : 'secondary'} className="flex items-center w-fit">
+                         {appt.appointmentType === 'online' ? <Video className="mr-1 h-3 w-3" /> : <Users className="mr-1 h-3 w-3" />}
+                         {appt.appointmentType === 'online' ? 'Online' : 'In-Person'}
+                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={
+                            appt.status === 'accepted' ? 'default' :
+                            appt.status === 'pending' ? 'outline' : 'destructive'
+                        }>{appt.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right space-y-2">
+                        {appt.status === 'pending' && (
+                            <div className="flex gap-2 justify-end">
+                                <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(appt.id, 'accepted')}><Check className="h-4 w-4 mr-1" /> Accept</Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleUpdateStatus(appt.id, 'declined')}><X className="h-4 w-4 mr-1"/> Decline</Button>
+                            </div>
+                        )}
+                        
+                        {appt.status === 'accepted' && appt.appointmentType === 'online' && !appt.meetingLink && (
+                            <div className="flex gap-2 justify-end">
+                                <Input 
+                                    placeholder="Paste Whereby link..." 
+                                    className="max-w-xs" 
+                                    value={linkInputs[appt.id] || ''}
+                                    onChange={(e) => handleInputChange(appt.id, e.target.value)}
+                                />
+                                <Button size="sm" onClick={() => handleSaveLink(appt.id)}>Save</Button>
+                            </div>
+                        )}
+
+                        {appt.status === 'accepted' && appt.appointmentType === 'online' && appt.meetingLink && (
+                            <Button size="sm" onClick={() => setActiveMeetingUrl(appt.meetingLink!)}>
+                                <Video className="h-4 w-4 mr-1" /> Join Call
+                            </Button>
+                        )}
                     </TableCell>
                   </TableRow>
-                )) : (<TableRow><TableCell colSpan={5} className="text-center h-24">No appointments found.</TableCell></TableRow>)}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }

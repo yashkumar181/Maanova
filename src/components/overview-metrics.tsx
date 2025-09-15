@@ -64,7 +64,7 @@ export function OverviewMetrics({ dateRange }: OverviewMetricsProps) {
     const queries = {
       activeUsers: query(collection(db, "students"), where("collegeId", "==", collegeId), where("lastActive", ">=", startTimestamp)),
       chatSessions: query(collection(db, "chatSessions"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
-      bookings: query(collection(db, "bookings"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp)),
+      bookings: query(collection(db, "appointments"), where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp)),
       resources: query(collection(db, "resourceAccessLogs"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
       forum: query(collection(db, "forumPosts"), where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
     };

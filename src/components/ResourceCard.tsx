@@ -1,10 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
 interface ResourceCardProps {
   title: string;
   description: string;
+  detailedContent: string;
   icon: LucideIcon;
   color: "mint" | "ocean" | "sage" | "primary";
   delay?: number;
@@ -13,6 +15,7 @@ interface ResourceCardProps {
 export function ResourceCard({
   title,
   description,
+  detailedContent,
   icon: Icon,
   color,
   delay = 0,
@@ -32,26 +35,39 @@ export function ResourceCard({
   };
 
   return (
-    <Card
-      className={cn(
-        "group h-full cursor-pointer transition-all duration-500 ease-in-out hover:-translate-y-1 hover:shadow-lg animate-slide-up",
-        colorClasses[color]
-      )}
-      style={{ animationDelay: `${delay * 0.1}s` }}
-      aria-label={`Resource card: ${title}`}
-    >
-      <CardContent className="p-6 text-center">
-        <div
+          <Dialog>
+      <DialogTrigger asChild>
+        <Card 
           className={cn(
-            "inline-flex p-3 rounded-full mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-1",
-            iconColorClasses[color]
+            "h-full transition-all duration-500 hover-lift cursor-pointer animate-slide-up hover:scale-105",
+            colorClasses[color]
           )}
+          style={{ animationDelay: `${delay * 0.1}s` }}
         >
-          <Icon className="h-8 w-8" />
+          <CardContent className="p-6 text-center">
+            <div className={cn("inline-flex p-3 rounded-full mb-4", iconColorClasses[color])}>
+              <Icon className="h-8 w-8" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px] animate-scale-in">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3 text-xl">
+            <div className={cn("inline-flex p-2 rounded-full", iconColorClasses[color])}>
+              <Icon className="h-6 w-6" />
+            </div>
+            {title}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="mt-4">
+          <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+            {detailedContent}
+          </p>
         </div>
-        <h3 className="text-lg font-semibold mb-2 text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-      </CardContent>
-    </Card>
+          </DialogContent>
+        </Dialog>
   );
 }

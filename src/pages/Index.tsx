@@ -126,10 +126,22 @@ const Index = () => {
               Comprehensive tools and support for your wellbeing journey
             </p>
           </div>
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ResourceCard
               title="Mindfulness & Meditation"
               description="Guided meditation sessions and mindfulness exercises to help you find inner peace and reduce stress."
+              detailedContent="Our mindfulness and meditation resources include:
+
+• Guided meditation sessions (5-30 minutes)
+• Breathing exercises for anxiety relief
+• Body scan relaxation techniques
+• Walking meditation practices
+• Mindful studying techniques
+• Daily mindfulness reminders
+• Progressive muscle relaxation
+
+These practices help reduce stress, improve focus, and enhance emotional regulation. Perfect for busy students who need quick, effective ways to center themselves during challenging times."
               icon={Brain}
               color="primary"
               delay={1}
@@ -137,6 +149,17 @@ const Index = () => {
             <ResourceCard
               title="Peer Support Groups"
               description="Connect with fellow students who understand your struggles in a safe, non-judgmental environment."
+              detailedContent="Join our supportive community of students:
+
+• Weekly group sessions (online & offline)
+• Topic-specific groups (anxiety, depression, academic stress)
+• Safe space sharing circles
+• Peer mentorship programs
+• Study buddy matching
+• Social activities and meetups
+• Anonymous support forums
+
+Led by trained facilitators, these groups provide a judgment-free zone where you can share experiences, learn coping strategies, and build lasting friendships with people who truly understand your journey."
               icon={Users}
               color="mint"
               delay={2}
@@ -144,6 +167,18 @@ const Index = () => {
             <ResourceCard
               title="Study-Life Balance"
               description="Learn practical strategies to manage academic pressure while maintaining your mental health."
+              detailedContent="Master the art of balanced student life:
+
+• Time management techniques and tools
+• Effective study methods (Pomodoro, active recall)
+• Setting healthy boundaries with work
+• Managing perfectionism and procrastination
+• Sleep hygiene for better academic performance
+• Nutrition tips for mental clarity
+• Exercise routines for busy schedules
+• Digital wellness and screen time management
+
+Our evidence-based strategies help you excel academically while maintaining your mental health and personal relationships."
               icon={BookOpen}
               color="ocean"
               delay={3}
@@ -151,6 +186,18 @@ const Index = () => {
             <ResourceCard
               title="Crisis Support"
               description="24/7 emotional support and crisis intervention when you need immediate help and guidance."
+              detailedContent="Immediate support when you need it most:
+
+• 24/7 crisis hotline access
+• Trained crisis counselors available
+• Safety planning assistance
+• Emergency resource connections
+• Follow-up support services
+• Family notification (if requested)
+• Campus security coordination
+• Professional referrals
+
+If you're experiencing suicidal thoughts, severe depression, panic attacks, or any mental health emergency, our crisis team is here to help immediately. You're never alone."
               icon={Heart}
               color="sage"
               delay={4}
@@ -158,6 +205,19 @@ const Index = () => {
             <ResourceCard
               title="Online Counseling"
               description="Professional therapy sessions with licensed counselors, available through secure video calls."
+              detailedContent="Professional mental health support at your fingertips:
+
+• Licensed therapists and counselors
+• Individual therapy sessions (50 minutes)
+• Cognitive Behavioral Therapy (CBT)
+• Dialectical Behavior Therapy (DBT)
+• Trauma-informed care
+• Cultural competency specialists
+• Flexible scheduling (evenings/weekends)
+• Secure, confidential platform
+• Insurance accepted
+
+Our qualified professionals provide personalized treatment plans tailored to your specific needs and goals. Start your healing journey with expert guidance."
               icon={Headphones}
               color="primary"
               delay={5}
@@ -165,11 +225,23 @@ const Index = () => {
             <ResourceCard
               title="Wellness Workshops"
               description="Interactive workshops on stress management, anxiety coping skills, and building resilience."
+              detailedContent="Skill-building workshops for lifelong wellness:
+
+• Stress management techniques
+• Anxiety and panic attack coping strategies
+• Building emotional resilience
+• Communication and relationship skills
+• Self-compassion and mindfulness
+• Goal setting and motivation
+• Healthy lifestyle habits
+• Career and academic planning
+
+Interactive sessions with practical exercises, group discussions, and take-home resources. Build a toolkit of skills that will serve you throughout your academic journey and beyond."
               icon={Calendar}
               color="mint"
               delay={6}
             />
-            </div>
+          </div>
         </div>
       </section>
 

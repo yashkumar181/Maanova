@@ -1,36 +1,44 @@
 import { NextResponse } from 'next/server';
 
 // This is a list of all the websites you trust to use this API.
-// For development, we'll add your local admin dashboard address.
-// For production, you would add your deployed admin dashboard's URL.
 const allowedOrigins = [
-  'http://localhost:3000', // Add the port your ADMIN dashboard runs on
-  'https://admin-dashboard-ivory-alpha-36.vercel.app/' // Example for production
+  'http://localhost:3001', // Your local admin dashboard
+  'https://admin-dashboard-ivory-alpha-36.vercel.app' // THIS IS THE FIX: Your deployed admin dashboard URL
 ];
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": allowedOrigins.join(', '),
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+// This function checks if the request is coming from an allowed origin
+const getCorsHeaders = (origin: string | null) => {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+  if (origin && allowedOrigins.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+  return headers;
 };
 
-// This function handles preflight requests that browsers send for CORS
-
+// This function handles "preflight" requests that browsers send first
 export async function OPTIONS(request: Request) {
+  const origin = request.headers.get('origin');
   return new Response(null, {
     status: 204,
-    headers: corsHeaders
+    headers: getCorsHeaders(origin)
   });
 }
 
 export async function POST(request: Request) {
+  const origin = request.headers.get('origin');
+  const headers = getCorsHeaders(origin);
+
   if (!process.env.WHEREBY_API_KEY) {
-    return NextResponse.json({ error: 'Server configuration error: Missing API key.' }, { status: 500, headers: corsHeaders });
+    console.error("Server Error: WHEREBY_API_KEY is not defined in environment variables.");
+    return NextResponse.json({ error: 'Server configuration error.' }, { status: 500, headers });
   }
 
   try {
     const endDate = new Date();
-    endDate.setHours(endDate.getHours() + 2);
+    endDate.setHours(endDate.getHours() + 2); // Meeting is valid for 2 hours
 
     const response = await fetch('https://api.whereby.dev/v1/meetings', {
       method: 'POST',
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorBody = await response.json();
       console.error('Whereby API Error:', errorBody);
-      throw new Error('Failed to create meeting room.');
+      throw new Error('Failed to create meeting room in Whereby.');
     }
 
     const meetingData = await response.json();
@@ -58,12 +66,10 @@ export async function POST(request: Request) {
       hostUrl: meetingData.hostRoomUrl,
     };
 
-    // Return the response with the CORS headers included
-    return NextResponse.json(meetingLinks, { headers: corsHeaders });
+    return NextResponse.json(meetingLinks, { headers });
 
   } catch (error) {
-    console.error(error);
-    // Return the error response with the CORS headers included
-    return NextResponse.json({ error: 'Failed to create meeting.' }, { status: 500, headers: corsHeaders });
+    console.error("Error in /api/create-meeting:", error);
+    return NextResponse.json({ error: 'Failed to create meeting.' }, { status: 500, headers });
   }
 }

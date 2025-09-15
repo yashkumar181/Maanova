@@ -26,13 +26,11 @@ export function Navigation() {
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // THIS IS THE FIX: State to prevent hydration errors
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  // END OF FIX
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -62,11 +60,20 @@ export function Navigation() {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  // Don't render translated text until the component is mounted on the client
+  // Show a skeleton loader on the server and initial client render to avoid hydration errors
   if (!isMounted) {
     return (
       <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4"><div className="flex items-center justify-between h-16"><Skeleton className="h-8 w-32" /><Skeleton className="h-10 w-48" /></div></div>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <Skeleton className="h-8 w-32" />
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-9 w-9 rounded-full" />
+              <Skeleton className="h-10 w-24 rounded-md" />
+            </div>
+          </div>
+        </div>
       </header>
     );
   }
@@ -108,7 +115,9 @@ export function Navigation() {
                     <div className="flex flex-col space-y-1"><p className="text-sm font-medium leading-none">{studentData.username}</p><p className="text-xs leading-none text-muted-foreground">{studentData.email}</p></div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/profile"><DropdownMenuItem><UserIcon className="mr-2 h-4 w-4" /><span>{t('navigation.profile')}</span></DropdownMenuItem></Link>
+                  <Link href="/profile"><DropdownMenuItem className="cursor-pointer"><UserIcon className="mr-2 h-4 w-4" /><span>{t('navigation.profile')}</span></DropdownMenuItem></Link>
+                  {/* The new "My Appointments" link is here */}
+                  <Link href="/my-appointments"><DropdownMenuItem className="cursor-pointer"><Calendar className="mr-2 h-4 w-4" />My Appointments</DropdownMenuItem></Link>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer"><LogOut className="mr-2 h-4 w-4" /><span>{t('navigation.sign_out')}</span></DropdownMenuItem>
                 </DropdownMenuContent>

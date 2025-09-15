@@ -1,8 +1,10 @@
+// src/components/booking-modal.tsx (Updated)
+
 "use client"
 
 import type React from "react"
 import { useState } from "react"
-import { collection, addDoc, Timestamp, doc, getDoc } from "firebase/firestore"
+import { collection, addDoc, Timestamp } from "firebase/firestore"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -11,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Clock, CheckCircle, AlertCircle } from "lucide-react"
-import { db, auth } from "@/lib/firebase"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group" // ✨ NEW: Import RadioGroup
+import { Clock, CheckCircle, AlertCircle, Video, Users } from "lucide-react" // ✨ NEW: Import icons
+import { db } from "@/lib/firebase"
 import { useToast } from "./ui/use-toast"
+import { useAuth } from "@/hooks/useAuth"
 
 interface Counselor {
   id: string
@@ -29,41 +33,43 @@ interface BookingModalProps {
   onClose: () => void
 }
 
-const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"]
+const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00"]
 
 export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) {
+  const { user } = useAuth()
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [reason, setReason] = useState("")
+  const [appointmentType, setAppointmentType] = useState<'online' | 'offline'>('online') // ✨ NEW: State for appointment type
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isBooked, setIsBooked] = useState(false)
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const currentUser = auth.currentUser
 
-    if (!counselor || !selectedDate || !selectedTime || !currentUser) {
+    if (!counselor || !selectedDate || !selectedTime || !user) {
       toast({ title: "Error", description: "Missing required information.", variant: "destructive" })
       return
     }
     
     setIsSubmitting(true)
     try {
-      const studentDoc = await getDoc(doc(db, "students", currentUser.uid))
-      if (!studentDoc.exists()) {
-        throw new Error("Could not find student profile.");
-      }
-      const collegeId = studentDoc.data().collegeId
+      const [hours, minutes] = selectedTime.split(':').map(Number)
+      const requestedDateTime = new Date(selectedDate)
+      requestedDateTime.setHours(hours, minutes, 0, 0)
 
-      await addDoc(collection(db, "bookings"), {
+      // 🔧 MODIFIED: Updated the data object for Firestore
+      await addDoc(collection(db, "appointments"), {
         counselorId: counselor.id,
-        studentUid: currentUser.uid,
-        collegeId: collegeId,
-        date: Timestamp.fromDate(selectedDate),
-        time: selectedTime,
+        counselorName: counselor.name,
+        studentId: user.uid,
+        studentName: user.displayName || "Anonymous Student",
+        requestedTime: Timestamp.fromDate(requestedDateTime),
         reason: reason,
         status: "pending",
+        appointmentType: appointmentType, // ✨ NEW: Saving the selected type
+        meetingLink: "", // ✨ NEW: Our new field, initially empty
         createdAt: Timestamp.now(),
       })
 
@@ -78,9 +84,7 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
 
   const handleClose = () => {
     setIsBooked(false)
-    setSelectedDate(new Date())
-    setSelectedTime("")
-    setReason("")
+    setAppointmentType('online') // Reset state on close
     onClose()
   }
 
@@ -104,64 +108,76 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Book an Appointment with {counselor.name}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          {/* RESPONSIVENESS: Changed to grid-cols-1 on mobile and md:grid-cols-2 on medium screens and up */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Select Date</Label>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                disabled={(date) => date < new Date() || date.getDay() === 0 || date.getDay() === 6}
-                className="rounded-md border mx-auto" // Added mx-auto to center the calendar on mobile
-              />
-            </div>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="time">Available Times</Label>
-                <Select value={selectedTime} onValueChange={setSelectedTime} required>
-                  <SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        <div className="flex items-center space-x-2"><Clock className="h-4 w-4" /><span>{time}</span></div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <span className="text-sm font-medium">Specialties:</span>
-                {counselor.specialties.map((specialty) => (
-                  <Badge key={specialty} variant="outline">{specialty}</Badge>
-                ))}
-              </div>
-                 <Alert variant="default" className="mt-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                        All appointments are confidential and secure.
-                    </AlertDescription>
-                </Alert>
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="reason">Reason for Appointment (Optional)</Label>
-            <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Briefly describe what you'd like to discuss..." />
-          </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting || !selectedTime}>
-              {isSubmitting ? "Requesting..." : "Request Appointment"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
+     <Dialog open={isOpen} onOpenChange={handleClose}>
+       <DialogContent className="max-w-xl">
+         <DialogHeader>
+           <DialogTitle>Book an Appointment with {counselor.name}</DialogTitle>
+         </DialogHeader>
+         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <div className="space-y-2">
+               <Label>1. Select Date</Label>
+               <Calendar
+                 mode="single"
+                 selected={selectedDate}
+                 onSelect={setSelectedDate}
+                 disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1)) || date.getDay() === 0 || date.getDay() === 6}
+                 className="rounded-md border mx-auto"
+               />
+             </div>
+             <div className="space-y-4">
+                <div>
+                 <Label>2. Select Time</Label>
+                 <Select value={selectedTime} onValueChange={setSelectedTime} required>
+                   <SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger>
+                   <SelectContent>
+                     {timeSlots.map((time) => (
+                       <SelectItem key={time} value={time}>
+                         <div className="flex items-center space-x-2"><Clock className="h-4 w-4" />
+                            <span>{`${parseInt(time.split(':')[0]) % 12 || 12}:${time.split(':')[1]} ${parseInt(time.split(':')[0]) >= 12 ? 'PM' : 'AM'}`}</span>
+                        </div>
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
+               </div>
+
+                {/* ✨ NEW: Appointment Type Selection */}
+                <div>
+                  <Label>3. Choose Session Type</Label>
+                  <RadioGroup defaultValue="online" value={appointmentType} onValueChange={(value: 'online' | 'offline') => setAppointmentType(value)} className="mt-2 grid grid-cols-2 gap-2">
+                    <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                       <RadioGroupItem value="online" id="online" className="sr-only" />
+                       <Video className="mb-2 h-6 w-6" />
+                       Online
+                    </Label>
+                     <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                       <RadioGroupItem value="offline" id="offline" className="sr-only" />
+                       <Users className="mb-2 h-6 w-6" />
+                       In-Person
+                    </Label>
+                  </RadioGroup>
+                </div>
+               <Alert variant="default" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                      All appointments are confidential and secure.
+                  </AlertDescription>
+              </Alert>
+             </div>
+           </div>
+           <div>
+             <Label htmlFor="reason">Reason for Appointment (Optional)</Label>
+             <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Briefly describe what you'd like to discuss..." />
+           </div>
+           <div className="flex justify-end space-x-2 pt-4">
+             <Button type="button" variant="ghost" onClick={handleClose}>Cancel</Button>
+             <Button type="submit" disabled={isSubmitting || !selectedTime}>
+               {isSubmitting ? "Requesting..." : "Request Appointment"}
+             </Button>
+           </div>
+         </form>
+       </DialogContent>
+     </Dialog>
+   )
 }

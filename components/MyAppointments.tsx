@@ -1,29 +1,33 @@
+// src/components/MyAppointments.tsx (Updated)
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { Video, Calendar, Clock } from "lucide-react";
+import { VideoCallModal } from "./VideoCallModal"; // ✨ NEW: Import the modal
+import { Video, Calendar, Clock, Users } from "lucide-react";
 
+// 🔧 MODIFIED: Updated Interface to match our new data structure
 interface Appointment {
   id: string;
-  counselorId: string;
   counselorName?: string;
-  date: Date;
-  time: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
-  meetingUrl?: string;
+  requestedTime: Timestamp;
+  status: 'pending' | 'accepted' | 'declined';
+  appointmentType: 'online' | 'offline'; // ✨ NEW
+  meetingLink?: string; // ✨ NEW
 }
 
 export function MyAppointments() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeMeetingUrl, setActiveMeetingUrl] = useState<string | null>(null); // ✨ NEW: State for the modal
 
   useEffect(() => {
     if (!user) {
@@ -31,24 +35,18 @@ export function MyAppointments() {
       return;
     }
 
-    const bookingsQuery = query(
-      collection(db, "bookings"),
-      where("studentUid", "==", user.uid),
-      orderBy("date", "desc")
+    const appointmentsQuery = query(
+      collection(db, "appointments"),
+      where("studentId", "==", user.uid),
+      orderBy("requestedTime", "desc")
     );
 
-    const unsubscribe = onSnapshot(bookingsQuery, async (snapshot) => {
-      const fetchedAppointments = await Promise.all(snapshot.docs.map(async (bookingDoc) => {
-        const bookingData = bookingDoc.data();
-        const counselorSnap = await getDoc(doc(db, "counselors", bookingData.counselorId));
-        
-        return {
-          id: bookingDoc.id,
-          ...bookingData,
-          counselorName: counselorSnap.exists() ? counselorSnap.data().name : "Unknown Counselor",
-          date: bookingData.date.toDate(),
-        } as Appointment;
-      }));
+    const unsubscribe = onSnapshot(appointmentsQuery, (snapshot) => {
+      const fetchedAppointments = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as Appointment));
+      
       setAppointments(fetchedAppointments);
       setLoading(false);
     });
@@ -57,10 +55,11 @@ export function MyAppointments() {
   }, [user]);
 
   const getStatusBadge = (status: string) => {
+    // This function is great, no changes needed
     switch (status) {
-      case 'confirmed': return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
+      case 'accepted': return <Badge className="bg-green-100 text-green-800">Accepted</Badge>;
       case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'cancelled': return <Badge variant="destructive">Cancelled</Badge>;
+      case 'declined': return <Badge variant="destructive">Declined</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
@@ -83,29 +82,50 @@ export function MyAppointments() {
   }
 
   return (
-    <div className="space-y-4">
-      {appointments.map((appt) => (
-        <Card key={appt.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex-1 space-y-1">
-            <p className="font-semibold">With {appt.counselorName}</p>
-            <div className="flex items-center text-sm text-muted-foreground gap-4">
-              <span className="flex items-center"><Calendar className="mr-2 h-4 w-4" /> {appt.date.toLocaleDateString()}</span>
-              <span className="flex items-center"><Clock className="mr-2 h-4 w-4" /> {appt.time}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            <div className="flex-1 sm:flex-none">{getStatusBadge(appt.status)}</div>
-            {appt.status === 'confirmed' && appt.meetingUrl && (
-              <Button asChild className="w-full sm:w-auto">
-                <a href={appt.meetingUrl} target="_blank" rel="noopener noreferrer">
-                  <Video className="mr-2 h-4 w-4" />
-                  Join Call
-                </a>
-              </Button>
-            )}
-          </div>
-        </Card>
-      ))}
-    </div>
+    <>
+      {/* ✨ NEW: Render the modal when a meeting URL is active */}
+      {activeMeetingUrl && (
+        <VideoCallModal
+          isOpen={!!activeMeetingUrl}
+          roomUrl={activeMeetingUrl}
+          onClose={() => setActiveMeetingUrl(null)}
+        />
+      )}
+
+      <div className="space-y-4">
+        {appointments.map((appt) => {
+          const appointmentDate = appt.requestedTime.toDate();
+          const isJoinable = appt.status === 'accepted' && appt.appointmentType === 'online' && appt.meetingLink;
+          
+          return (
+            <Card key={appt.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1 space-y-1">
+                <p className="font-semibold">With {appt.counselorName || "Unknown Counselor"}</p>
+                <div className="flex items-center text-sm text-muted-foreground gap-4 flex-wrap">
+                  <span className="flex items-center"><Calendar className="mr-2 h-4 w-4" /> {appointmentDate.toLocaleDateString()}</span>
+                  <span className="flex items-center"><Clock className="mr-2 h-4 w-4" /> {appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {/* ✨ NEW: Display if the session is Online or In-Person */}
+                  <span className="flex items-center font-medium">
+                    {appt.appointmentType === 'online' ? <Video className="mr-2 h-4 w-4 text-blue-500" /> : <Users className="mr-2 h-4 w-4 text-slate-600" />}
+                    {appt.appointmentType === 'online' ? 'Online Session' : 'In-Person'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="flex-1 sm:flex-none">{getStatusBadge(appt.status)}</div>
+                
+                {/* 🔧 MODIFIED: Logic for Join Call button now launches the modal */}
+                {isJoinable && (
+                  <Button onClick={() => setActiveMeetingUrl(appt.meetingLink!)} className="w-full sm:w-auto">
+                    <Video className="mr-2 h-4 w-4" />
+                    Join Call
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+    </>
   );
 }

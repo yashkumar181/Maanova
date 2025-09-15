@@ -247,7 +247,7 @@ Monitor your mental health journey with meaningful analytics that help you under
       </section>
 
       {/* College Registration Section */}
-      <section className="py-12 px-4">
+      <section className="py-6 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <div className="animate-fade-in">
             <p className="text-lg text-muted-foreground mb-6">

@@ -253,12 +253,14 @@ Monitor your mental health journey with meaningful analytics that help you under
             <p className="text-lg text-muted-foreground mb-6">
               Haven't registered yet? Register your college
             </p>
+            <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/register">
             <Button 
               size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"
             >
               Register College
             </Button>
+            </a>
           </div>
         </div>
       </section>

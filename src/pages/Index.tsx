@@ -5,17 +5,18 @@ import { ResourceCard } from "@/components/ResourceCard";
 import { HelplineCard } from "@/components/HelplineCard";
 import { FloatingElement } from "@/components/FloatingElement";
 
-import { 
-  Brain, 
+import {  
   Heart, 
   Users, 
   BookOpen, 
-  Headphones, 
-  Calendar,
   UserCheck,
-  ShieldCheck,
+  Bot,
+  BookOpen,
+  BarChart3,
+  TrendingUp
   Smile,
   MessageCircle,
+  ShieldCheck,
   TreePine,
   Star
 } from "lucide-react";
@@ -129,115 +130,116 @@ const Index = () => {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <ResourceCard
-              title="Mindfulness & Meditation"
-              description="Guided meditation sessions and mindfulness exercises to help you find inner peace and reduce stress."
-              detailedContent="Our mindfulness and meditation resources include:
+              title="Peer Forum"
+              description="Connect with fellow students in discussion forums, share experiences, and get peer support."
+              detailedContent="Join our vibrant community platform:
 
-• Guided meditation sessions (5-30 minutes)
-• Breathing exercises for anxiety relief
-• Body scan relaxation techniques
-• Walking meditation practices
-• Mindful studying techniques
-• Daily mindfulness reminders
-• Progressive muscle relaxation
+• Topic-based discussion threads
+• Anonymous posting options
+• Peer-to-peer support groups
+• Study groups and academic help
+• Mental health check-ins
+• Success story sharing
+• Event coordination
+• Moderated safe spaces
 
-These practices help reduce stress, improve focus, and enhance emotional regulation. Perfect for busy students who need quick, effective ways to center themselves during challenging times."
-              icon={Brain}
+Our peer forum creates connections between students facing similar challenges, fostering a supportive community where you can both give and receive help."
+              icon={Users}
               color="primary"
               delay={1}
             />
             <ResourceCard
-              title="Peer Support Groups"
-              description="Connect with fellow students who understand your struggles in a safe, non-judgmental environment."
-              detailedContent="Join our supportive community of students:
+              title="Counsellor Mapping"
+              description="Find and connect with qualified mental health professionals matched to your specific needs."
+              detailedContent="Smart counselor matching system:
 
-• Weekly group sessions (online & offline)
-• Topic-specific groups (anxiety, depression, academic stress)
-• Safe space sharing circles
-• Peer mentorship programs
-• Study buddy matching
-• Social activities and meetups
-• Anonymous support forums
+• Personalized counselor recommendations
+• Filter by specialization and approach
+• Location-based and online options
+• Language preference matching
+• Insurance compatibility check
+• Student-friendly pricing
+• Availability calendar integration
+• Secure booking system
 
-Led by trained facilitators, these groups provide a judgment-free zone where you can share experiences, learn coping strategies, and build lasting friendships with people who truly understand your journey."
-              icon={Users}
+Our intelligent matching system connects you with the right mental health professional based on your unique needs, preferences, and circumstances."
+              icon={UserCheck}
               color="mint"
               delay={2}
             />
             <ResourceCard
-              title="Study-Life Balance"
-              description="Learn practical strategies to manage academic pressure while maintaining your mental health."
-              detailedContent="Master the art of balanced student life:
+              title="AI Chatbot"
+              description="24/7 AI-powered mental health support for immediate guidance and coping strategies."
+              detailedContent="Intelligent mental health assistance:
 
-• Time management techniques and tools
-• Effective study methods (Pomodoro, active recall)
-• Setting healthy boundaries with work
-• Managing perfectionism and procrastination
-• Sleep hygiene for better academic performance
-• Nutrition tips for mental clarity
-• Exercise routines for busy schedules
-• Digital wellness and screen time management
+ 24/7 availability for immediate support
+• Crisis intervention and safety planning
+• Coping strategy recommendations
+• Mood tracking and insights
+• Personalized wellness tips
+• Resource recommendations
+• Emergency contact integration
+• Privacy-protected conversations
 
-Our evidence-based strategies help you excel academically while maintaining your mental health and personal relationships."
-              icon={BookOpen}
+Our AI chatbot provides immediate support when you need it most, offering evidence-based coping strategies and knowing when to connect you with human professionals."
+              icon={Bot}
               color="ocean"
               delay={3}
             />
             <ResourceCard
-              title="Crisis Support"
-              description="24/7 emotional support and crisis intervention when you need immediate help and guidance."
-              detailedContent="Immediate support when you need it most:
+              title="Resources"
+              description="Comprehensive library of mental health resources, guides, and self-help materials."
+              detailedContent="Extensive resource collection:
 
-• 24/7 crisis hotline access
-• Trained crisis counselors available
-• Safety planning assistance
-• Emergency resource connections
-• Follow-up support services
-• Family notification (if requested)
-• Campus security coordination
-• Professional referrals
+• Self-help guides and workbooks
+• Video tutorials and webinars
+• Meditation and mindfulness content
+• Academic stress management
+• Crisis intervention resources
+• Family support materials
+• Campus-specific information
+• Downloadable worksheets
 
-If you're experiencing suicidal thoughts, severe depression, panic attacks, or any mental health emergency, our crisis team is here to help immediately. You're never alone."
-              icon={Heart}
+Access a curated library of evidence-based mental health resources designed specifically for college students and their unique challenges."
+              icon={BookOpen}
               color="sage"
               delay={4}
             />
             <ResourceCard
-              title="Online Counseling"
-              description="Professional therapy sessions with licensed counselors, available through secure video calls."
-              detailedContent="Professional mental health support at your fingertips:
+              title="Admin Live Data"
+              description="Real-time dashboard for administrators to monitor platform usage and student wellbeing trends."
+              detailedContent="Administrative analytics dashboard:
 
-• Licensed therapists and counselors
-• Individual therapy sessions (50 minutes)
-• Cognitive Behavioral Therapy (CBT)
-• Dialectical Behavior Therapy (DBT)
-• Trauma-informed care
-• Cultural competency specialists
-• Flexible scheduling (evenings/weekends)
-• Secure, confidential platform
-• Insurance accepted
+• Real-time platform usage statistics
+• Student engagement metrics
+• Crisis alert monitoring
+• Resource utilization tracking
+• Geographic usage patterns
+• Peak usage time analysis
+• Intervention success rates
+• Privacy-compliant reporting
 
-Our qualified professionals provide personalized treatment plans tailored to your specific needs and goals. Start your healing journey with expert guidance."
-              icon={Headphones}
+Provides administrators with insights to improve services while maintaining strict privacy and anonymity standards."
+              icon={BarChart3}
               color="primary"
               delay={5}
             />
             <ResourceCard
-              title="Wellness Workshops"
-              description="Interactive workshops on stress management, anxiety coping skills, and building resilience."
-              detailedContent="Skill-building workshops for lifelong wellness:
+              title="Personal Analytics"
+              description="Track your mental health journey with personalized insights and progress monitoring."
+              detailedContent="Personal wellness tracking:
 
-• Stress management techniques
-• Anxiety and panic attack coping strategies
-• Building emotional resilience
-• Communication and relationship skills
-• Self-compassion and mindfulness
-• Goal setting and motivation
-• Healthy lifestyle habits
-• Career and academic planning
+• Mood tracking and patterns
+• Progress visualization charts
+• Goal setting and achievement
+• Session attendance tracking
+• Wellness milestone celebrations
+• Personalized insights and trends
+• Export data for healthcare providers
+• Privacy-first data handling
 
-Interactive sessions with practical exercises, group discussions, and take-home resources. Build a toolkit of skills that will serve you throughout your academic journey and beyond."
-              icon={Calendar}
+Monitor your mental health journey with meaningful analytics that help you understand patterns and celebrate progress toward your wellness goals."
+              icon={TrendingUp}
               color="mint"
               delay={6}
             />

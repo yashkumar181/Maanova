@@ -118,7 +118,7 @@ const Index = () => {
       </section>
 
       {/* Resource Cards Section */}
-      <section id="resources" className="py-20 px-4">
+      <section id="resources" className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-4xl font-bold mb-4 text-foreground">Mental Health Resources</h2>
@@ -247,7 +247,7 @@ Monitor your mental health journey with meaningful analytics that help you under
       </section>
 
       {/* College Registration Section */}
-      <section className="py-6 px-4">
+      <section className="py-12 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <div className="animate-fade-in">
             <p className="text-lg text-muted-foreground mb-6">

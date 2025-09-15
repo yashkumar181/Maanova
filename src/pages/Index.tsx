@@ -246,6 +246,23 @@ Monitor your mental health journey with meaningful analytics that help you under
         </div>
       </section>
 
+      {/* College Registration Section */}
+      <section className="py-12 px-4">
+        <div className="container mx-auto max-w-4xl text-center">
+          <div className="animate-fade-in">
+            <p className="text-lg text-muted-foreground mb-6">
+              Haven't registered yet? Register your college
+            </p>
+            <Button 
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"
+            >
+              Register College
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Indian Helplines Section */}
       <section id="helplines" className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">

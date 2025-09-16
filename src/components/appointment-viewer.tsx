@@ -145,10 +145,12 @@ export function AppointmentViewer() {
                       )}
                       
                       {appt.status === 'accepted' && appt.appointmentType === 'online' && appt.hostMeetingLink && (
-                          <Button size="sm" onClick={() => setActiveMeetingUrl(appt.hostMeetingLink!)}>
-                              <Video className="h-4 w-4 mr-1" /> Join as Host
-                          </Button>
-                      )}
+    <Button size="sm" asChild>
+      <a href={appt.hostMeetingLink} target="_blank" rel="noopener noreferrer">
+        <Video className="h-4 w-4 mr-1" /> Join as Host
+      </a>
+    </Button>
+)}
                     </TableCell>
                   </TableRow>
                 ))

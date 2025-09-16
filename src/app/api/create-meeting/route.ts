@@ -1,62 +1,76 @@
-// src/app/api/create-meeting/route.ts (More Robust Version)
+// src/app/api/create-meeting/route.ts (Updated for Zoom)
 
 import { NextResponse } from 'next/server';
 
-export async function POST() {
-  const apiKey = process.env.WHEREBY_API_KEY;
+// This function gets an access token from Zoom
+async function getZoomAccessToken() {
+  const accountId = process.env.ZOOM_ACCOUNT_ID;
+  const clientId = process.env.ZOOM_CLIENT_ID;
+  const clientSecret = process.env.ZOOM_CLIENT_SECRET;
 
-  if (!apiKey) {
-    console.error("WHEREBY_API_KEY is not configured in .env.local");
-    return NextResponse.json({ error: 'API key is not configured' }, { status: 500 });
+  if (!accountId || !clientId || !clientSecret) {
+    throw new Error('Zoom credentials are not configured in .env.local');
   }
 
-  try {
-    const endDate = new Date();
-    endDate.setHours(endDate.getHours() + 2);
-    
-    // ❗ Double-check this URL for any typos
-    const wherebyEndpoint = "https://api.whereby.com/v1/meetings";
+  const response = await fetch(`https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${accountId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+    }
+  });
 
-    const response = await fetch(wherebyEndpoint, {
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("Zoom Auth Error:", errorData);
+    throw new Error('Failed to get Zoom access token');
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+// This is the main API route that the dashboard calls
+export async function POST() {
+  try {
+    const accessToken = await getZoomAccessToken();
+
+    // Create a meeting for the user who owns the app (e.g., the main admin account)
+    const response = await fetch("https://api.zoom.us/v2/users/me/meetings", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        endDate: endDate.toISOString(),
-        roomMode: "group",
-        fields: ["hostRoomUrl"],
+        topic: "Counseling Session",
+        type: 2, // Scheduled meeting
+        start_time: new Date().toISOString(),
+        duration: 45, // in minutes
+        settings: {
+          host_video: true,
+          participant_video: true,
+          join_before_host: false,
+          mute_upon_entry: true,
+          waiting_room: true, // Highly recommended for privacy
+        },
       }),
     });
 
-    // 🔧 MODIFIED: Better error handling
     if (!response.ok) {
-      // Get the raw text of the response
-      const errorText = await response.text();
-      console.error("Whereby API returned an error. Status:", response.status);
-      console.error("Raw Error Response:", errorText); // This will show us the HTML
-      
-      // Try to parse as JSON, but don't crash if it's not
-      let errorDetails;
-      try {
-        errorDetails = JSON.parse(errorText);
-      } catch (e) {
-        errorDetails = { message: "Response was not valid JSON.", content: errorText };
-      }
-
-      return NextResponse.json({ error: 'Failed to create meeting', details: errorDetails }, { status: response.status });
+      const errorData = await response.json();
+      console.error("Zoom Meeting Creation Error:", errorData);
+      throw new Error('Failed to create Zoom meeting');
     }
 
     const meetingData = await response.json();
-    
-    return NextResponse.json({ 
-      participantUrl: meetingData.roomUrl, 
-      hostUrl: meetingData.hostRoomUrl 
+
+    return NextResponse.json({
+      participantUrl: meetingData.join_url, // Student's link
+      hostUrl: meetingData.start_url,       // Counselor's private start link
     });
 
-  } catch (error) {
-    console.error("Internal Server Error:", error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error("Internal Server Error:", error.message);
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }

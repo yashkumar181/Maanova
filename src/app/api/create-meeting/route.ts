@@ -1,4 +1,4 @@
-// src/app/api/create-meeting/route.ts (Updated for Zoom)
+// src/app/api/create-meeting/route.ts (Updated to fix 'any' type)
 
 import { NextResponse } from 'next/server';
 
@@ -34,7 +34,6 @@ export async function POST() {
   try {
     const accessToken = await getZoomAccessToken();
 
-    // Create a meeting for the user who owns the app (e.g., the main admin account)
     const response = await fetch("https://api.zoom.us/v2/users/me/meetings", {
       method: "POST",
       headers: {
@@ -51,7 +50,7 @@ export async function POST() {
           participant_video: true,
           join_before_host: false,
           mute_upon_entry: true,
-          waiting_room: true, // Highly recommended for privacy
+          waiting_room: true,
         },
       }),
     });
@@ -65,12 +64,18 @@ export async function POST() {
     const meetingData = await response.json();
 
     return NextResponse.json({
-      participantUrl: meetingData.join_url, // Student's link
-      hostUrl: meetingData.start_url,       // Counselor's private start link
+      participantUrl: meetingData.join_url,
+      hostUrl: meetingData.start_url,
     });
 
-  } catch (error: any) {
-    console.error("Internal Server Error:", error.message);
-    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
+  // 🔧 MODIFIED: This catch block is updated to be type-safe
+  } catch (error) {
+    let errorMessage = "An unknown error occurred";
+    // Safely check if the error is an actual Error object
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    console.error("Internal Server Error:", errorMessage);
+    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 });
   }
 }

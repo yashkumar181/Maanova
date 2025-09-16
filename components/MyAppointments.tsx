@@ -1,5 +1,3 @@
-// src/components/MyAppointments.tsx (Updated)
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,24 +8,23 @@ import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { VideoCallModal } from "./VideoCallModal"; // ✨ NEW: Import the modal
+import { VideoCallModal } from "./VideoCallModal";
 import { Video, Calendar, Clock, Users } from "lucide-react";
 
-// 🔧 MODIFIED: Updated Interface to match our new data structure
 interface Appointment {
   id: string;
   counselorName?: string;
   requestedTime: Timestamp;
   status: 'pending' | 'accepted' | 'declined';
-  appointmentType: 'online' | 'offline'; // ✨ NEW
-  meetingLink?: string; // ✨ NEW
+  appointmentType: 'online' | 'offline';
+  meetingLink?: string;
 }
 
 export function MyAppointments() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeMeetingUrl, setActiveMeetingUrl] = useState<string | null>(null); // ✨ NEW: State for the modal
+  const [activeMeetingUrl, setActiveMeetingUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -55,7 +52,6 @@ export function MyAppointments() {
   }, [user]);
 
   const getStatusBadge = (status: string) => {
-    // This function is great, no changes needed
     switch (status) {
       case 'accepted': return <Badge className="bg-green-100 text-green-800">Accepted</Badge>;
       case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
@@ -83,7 +79,6 @@ export function MyAppointments() {
 
   return (
     <>
-      {/* ✨ NEW: Render the modal when a meeting URL is active */}
       {activeMeetingUrl && (
         <VideoCallModal
           isOpen={!!activeMeetingUrl}
@@ -98,28 +93,29 @@ export function MyAppointments() {
           const isJoinable = appt.status === 'accepted' && appt.appointmentType === 'online' && appt.meetingLink;
           
           return (
-            <Card key={appt.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex-1 space-y-1">
+            <Card key={appt.id} className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex-1 space-y-2">
                 <p className="font-semibold">With {appt.counselorName || "Unknown Counselor"}</p>
                 <div className="flex items-center text-sm text-muted-foreground gap-4 flex-wrap">
                   <span className="flex items-center"><Calendar className="mr-2 h-4 w-4" /> {appointmentDate.toLocaleDateString()}</span>
                   <span className="flex items-center"><Clock className="mr-2 h-4 w-4" /> {appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  {/* ✨ NEW: Display if the session is Online or In-Person */}
                   <span className="flex items-center font-medium">
                     {appt.appointmentType === 'online' ? <Video className="mr-2 h-4 w-4 text-blue-500" /> : <Users className="mr-2 h-4 w-4 text-slate-600" />}
                     {appt.appointmentType === 'online' ? 'Online Session' : 'In-Person'}
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-4 w-full sm:w-auto">
-                <div className="flex-1 sm:flex-none">{getStatusBadge(appt.status)}</div>
-                
-                {/* 🔧 MODIFIED: Logic for Join Call button now launches the modal */}
-                {isJoinable && (
-                  <Button onClick={() => setActiveMeetingUrl(appt.meetingLink!)} className="w-full sm:w-auto">
+              <div className="flex items-center justify-end gap-4 w-full sm:w-auto">
+                <div className="w-24 text-center">
+                  {getStatusBadge(appt.status)}
+                </div>
+                {isJoinable ? (
+                  <Button onClick={() => setActiveMeetingUrl(appt.meetingLink!)} className="w-32">
                     <Video className="mr-2 h-4 w-4" />
                     Join Call
                   </Button>
+                ) : (
+                  <div className="w-32" />
                 )}
               </div>
             </Card>

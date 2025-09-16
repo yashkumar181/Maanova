@@ -1,10 +1,8 @@
-// src/components/booking-modal.tsx (Updated)
-
 "use client"
 
 import type React from "react"
 import { useState } from "react"
-import { collection, addDoc, Timestamp } from "firebase/firestore"
+import { collection, addDoc, Timestamp, doc, getDoc } from "firebase/firestore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -13,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group" // ✨ NEW: Import RadioGroup
-import { Clock, CheckCircle, AlertCircle, Video, Users } from "lucide-react" // ✨ NEW: Import icons
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Clock, CheckCircle, AlertCircle, Video, Users } from "lucide-react"
 import { db } from "@/lib/firebase"
 import { useToast } from "./ui/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -40,13 +38,13 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [reason, setReason] = useState("")
-  const [appointmentType, setAppointmentType] = useState<'online' | 'offline'>('online') // ✨ NEW: State for appointment type
+  const [appointmentType, setAppointmentType] = useState<'online' | 'offline'>('online')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isBooked, setIsBooked] = useState(false)
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!counselor || !selectedDate || !selectedTime || !user) {
       toast({ title: "Error", description: "Missing required information.", variant: "destructive" })
@@ -55,36 +53,53 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
     
     setIsSubmitting(true)
     try {
-      const [hours, minutes] = selectedTime.split(':').map(Number)
-      const requestedDateTime = new Date(selectedDate)
-      requestedDateTime.setHours(hours, minutes, 0, 0)
+      // Fetch the student's profile document from Firestore
+      const studentDocRef = doc(db, "students", user.uid);
+      const studentDocSnap = await getDoc(studentDocRef);
 
-      // 🔧 MODIFIED: Updated the data object for Firestore
+      // Extract username and collegeId from the document
+      const studentUsername = studentDocSnap.exists() ? studentDocSnap.data().username : "anonymous_user";
+      const studentCollegeId = studentDocSnap.exists() ? studentDocSnap.data().collegeId : null;
+
+      // Optional: Prevent booking if collegeId is missing from the student's profile
+      if (!studentCollegeId) {
+        toast({ title: "Profile Incomplete", description: "Could not find your College ID. Please update your profile before booking.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const requestedDateTime = new Date(selectedDate);
+      requestedDateTime.setHours(hours, minutes, 0, 0);
+
+      // Add all necessary fields, including collegeId, to the appointment data
       await addDoc(collection(db, "appointments"), {
         counselorId: counselor.id,
         counselorName: counselor.name,
         studentId: user.uid,
         studentName: user.displayName || "Anonymous Student",
+        studentUsername: studentUsername,
+        collegeId: studentCollegeId, // This is the new, important field
         requestedTime: Timestamp.fromDate(requestedDateTime),
         reason: reason,
         status: "pending",
-        appointmentType: appointmentType, // ✨ NEW: Saving the selected type
-        meetingLink: "", // ✨ NEW: Our new field, initially empty
+        appointmentType: appointmentType,
+        meetingLink: "",
         createdAt: Timestamp.now(),
-      })
+      });
 
-      setIsBooked(true)
+      setIsBooked(true);
     } catch (error) {
-      console.error("Error booking appointment:", error)
-      toast({ title: "Booking Failed", description: "Could not book appointment. Please try again.", variant: "destructive" })
+      console.error("Error booking appointment:", error);
+      toast({ title: "Booking Failed", description: "Could not book appointment. Please try again.", variant: "destructive" });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
   const handleClose = () => {
     setIsBooked(false)
-    setAppointmentType('online') // Reset state on close
+    setAppointmentType('online')
     onClose()
   }
 
@@ -126,7 +141,7 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
                />
              </div>
              <div className="space-y-4">
-                <div>
+               <div>
                  <Label>2. Select Time</Label>
                  <Select value={selectedTime} onValueChange={setSelectedTime} required>
                    <SelectTrigger><SelectValue placeholder="Select a time" /></SelectTrigger>
@@ -141,29 +156,27 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
                    </SelectContent>
                  </Select>
                </div>
-
-                {/* ✨ NEW: Appointment Type Selection */}
-                <div>
-                  <Label>3. Choose Session Type</Label>
-                  <RadioGroup defaultValue="online" value={appointmentType} onValueChange={(value: 'online' | 'offline') => setAppointmentType(value)} className="mt-2 grid grid-cols-2 gap-2">
+               <div>
+                 <Label>3. Choose Session Type</Label>
+                 <RadioGroup defaultValue="online" value={appointmentType} onValueChange={(value: 'online' | 'offline') => setAppointmentType(value)} className="mt-2 grid grid-cols-2 gap-2">
+                   <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                      <RadioGroupItem value="online" id="online" className="sr-only" />
+                      <Video className="mb-2 h-6 w-6" />
+                      Online
+                   </Label>
                     <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                       <RadioGroupItem value="online" id="online" className="sr-only" />
-                       <Video className="mb-2 h-6 w-6" />
-                       Online
-                    </Label>
-                     <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                       <RadioGroupItem value="offline" id="offline" className="sr-only" />
-                       <Users className="mb-2 h-6 w-6" />
-                       In-Person
-                    </Label>
-                  </RadioGroup>
-                </div>
-               <Alert variant="default" className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                      All appointments are confidential and secure.
-                  </AlertDescription>
-              </Alert>
+                      <RadioGroupItem value="offline" id="offline" className="sr-only" />
+                      <Users className="mb-2 h-6 w-6" />
+                      In-Person
+                   </Label>
+                 </RadioGroup>
+               </div>
+              <Alert variant="default" className="mt-4">
+                 <AlertCircle className="h-4 w-4" />
+                 <AlertDescription className="text-xs">
+                     All appointments are confidential and secure.
+                 </AlertDescription>
+             </Alert>
              </div>
            </div>
            <div>

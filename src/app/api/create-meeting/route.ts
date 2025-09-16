@@ -1,4 +1,4 @@
-// src/app/api/create-meeting/route.ts
+// src/app/api/create-meeting/route.ts (More Robust Version)
 
 import { NextResponse } from 'next/server';
 
@@ -6,15 +6,18 @@ export async function POST() {
   const apiKey = process.env.WHEREBY_API_KEY;
 
   if (!apiKey) {
+    console.error("WHEREBY_API_KEY is not configured in .env.local");
     return NextResponse.json({ error: 'API key is not configured' }, { status: 500 });
   }
 
   try {
-    // Set the meeting to end 2 hours from now
     const endDate = new Date();
     endDate.setHours(endDate.getHours() + 2);
+    
+    // ❗ Double-check this URL for any typos
+    const wherebyEndpoint = "https://api.whereby.com/v1/meetings";
 
-    const response = await fetch("https://api.whereby.com/v1/meetings", {
+    const response = await fetch(wherebyEndpoint, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -22,20 +25,31 @@ export async function POST() {
       },
       body: JSON.stringify({
         endDate: endDate.toISOString(),
-        roomMode: "group", // Creates a temporary room
-        fields: ["hostRoomUrl"], // Ask the API to include the host link in the response
+        roomMode: "group",
+        fields: ["hostRoomUrl"],
       }),
     });
 
+    // 🔧 MODIFIED: Better error handling
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Whereby API Error:", errorData);
-      return NextResponse.json({ error: 'Failed to create meeting' }, { status: response.status });
+      // Get the raw text of the response
+      const errorText = await response.text();
+      console.error("Whereby API returned an error. Status:", response.status);
+      console.error("Raw Error Response:", errorText); // This will show us the HTML
+      
+      // Try to parse as JSON, but don't crash if it's not
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch (e) {
+        errorDetails = { message: "Response was not valid JSON.", content: errorText };
+      }
+
+      return NextResponse.json({ error: 'Failed to create meeting', details: errorDetails }, { status: response.status });
     }
 
     const meetingData = await response.json();
     
-    // Return both the student link (roomUrl) and counselor link (hostRoomUrl)
     return NextResponse.json({ 
       participantUrl: meetingData.roomUrl, 
       hostUrl: meetingData.hostRoomUrl 

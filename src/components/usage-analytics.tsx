@@ -29,6 +29,7 @@ interface FeatureUsage {
   name: string;
   value: number;
   color: string;
+  [key: string]: string | number; // Add this line to fix the error
 }
 
 interface AnalyticsDoc {

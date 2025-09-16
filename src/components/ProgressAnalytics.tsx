@@ -138,10 +138,10 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
               <SelectTrigger id="year-filter"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Years</SelectItem>
-                <SelectItem value="Freshman">Freshman</SelectItem>
-                <SelectItem value="Sophomore">Sophomore</SelectItem>
-                <SelectItem value="Junior">Junior</SelectItem>
-                <SelectItem value="Senior">Senior</SelectItem>
+                <SelectItem value="First">Freshman</SelectItem>
+                <SelectItem value="Second">Sophomore</SelectItem>
+                <SelectItem value="Third">Junior</SelectItem>
+                <SelectItem value="Fourth">Senior</SelectItem>
               </SelectContent>
             </Select>
           </div>

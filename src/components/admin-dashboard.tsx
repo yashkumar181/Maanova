@@ -16,9 +16,9 @@ import { UsageAnalytics } from "@/components/usage-analytics"
 import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart3, Users2, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut } from "lucide-react"
+import { BarChart3, Users2, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut, HeartPulse } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-
+import { ProgressAnalytics } from './ProgressAnalytics';
 import { CounselorManagement } from './counselor-management';
 import { AppointmentViewer } from './appointment-viewer';
 import { ResourceManagement } from "./resource-management";
@@ -29,6 +29,7 @@ interface AdminData extends DocumentData {
   username: string;
   gmail: string;
   collegeName: string;
+  collegeId: string;
 }
 
 export function AdminDashboard() {
@@ -82,7 +83,6 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* <-- RESPONSIVE HEADER: flex-wrap and gap handle stacking on small screens --> */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <div className="flex items-center gap-4">
@@ -110,10 +110,10 @@ export function AdminDashboard() {
       </Alert>
 
       <Card className="p-4">
-        <div className="flex flex-wrap items-center justify-between gap-4"> {/* <-- RESPONSIVE: Added flex-wrap and gap here as well --> */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium">Time Period:</span>
-            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-3 py-1 border border-border rounded-md text-sm bg-background">
+            <select id="dateRange" name="dateRange" value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="px-3 py-1 border border-border rounded-md text-sm bg-background">
               <option value="24h">Last 24 Hours</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
@@ -126,22 +126,42 @@ export function AdminDashboard() {
       <OverviewMetrics dateRange={dateRange} />
 
       <Tabs defaultValue="usage" className="w-full">
-        {/* <-- RESPONSIVE TABS: The grid layout changes based on screen size --> */}
-        <TabsList className="grid w-full h-auto grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-          <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
-          <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
-          <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
-          <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
-          <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counsellors</TabsTrigger>
-          <TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger>
-        </TabsList>
+        {/* Desktop Tab Bar (visible on medium screens and up) */}
+        <div className="hidden md:block">
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
+            <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
+            <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
+            <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
+            <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counselors</TabsTrigger>
+            <TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger>
+            <TabsTrigger value="progress"><HeartPulse className="mr-2 h-4 w-4" />Progress</TabsTrigger>
+          </TabsList>
+        </div>
 
+        {/* Mobile Grid Layout (visible only on small screens) */}
+        <div className="md:hidden">
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger>
+            <TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger>
+            <TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger>
+            <TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger>
+            <TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counselors</TabsTrigger>
+            <TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger>
+            <TabsTrigger value="progress"><HeartPulse className="mr-2 h-4 w-4" />Progress</TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Tab Content Panes */}
         <TabsContent value="usage" className="mt-6"><UsageAnalytics dateRange={dateRange} /></TabsContent>
         <TabsContent value="trends" className="mt-6"><TrendAnalysis dateRange={dateRange} /></TabsContent>
         <TabsContent value="moderation" className="mt-6"><ModerationTools /></TabsContent>
         <TabsContent value="appointments" className="mt-6"><AppointmentViewer /></TabsContent>
         <TabsContent value="counselors" className="mt-6"><CounselorManagement /></TabsContent>
         <TabsContent value="resources" className="mt-6"><ResourceManagement /></TabsContent>
+        <TabsContent value="progress" className="mt-6">
+          <ProgressAnalytics collegeId={adminData.collegeId} />
+        </TabsContent>
       </Tabs>
     </div>
   )

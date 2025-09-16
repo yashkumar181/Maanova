@@ -92,7 +92,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
       try {
         const collections = {
           chatSessions: collection(db, "chatSessions"),
-          bookings: collection(db, "bookings"),
+          bookings: collection(db, "appointments"),
           resources: collection(db, "resourceAccessLogs"),
           forum: collection(db, "forumPosts"),
         };
@@ -146,7 +146,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
         setFeatureUsage([
           { name: "AI Chat", value: chatSnap.size, color: "#0891b2" },
           { name: "Resources", value: resourceSnap.size, color: "#f97316" },
-          { name: "Bookings", value: bookingSnap.size, color: "#22c55e" },
+          { name: "Appointments", value: bookingSnap.size, color: "#22c55e" },
           { name: "Forum", value: forumSnap.size, color: "#a855f7" },
         ]);
 

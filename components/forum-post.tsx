@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,23 +8,11 @@ import { Heart, MessageCircle, Clock, Pin, Flag, MoreHorizontal } from "lucide-r
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/useAuth"
 import { db } from "@/lib/firebase"
-import { doc, updateDoc, increment, collection, onSnapshot, writeBatch, query, where, QuerySnapshot } from "firebase/firestore"
+import { doc, updateDoc, increment, collection, onSnapshot, writeBatch, query, where, QuerySnapshot, Timestamp } from "firebase/firestore"
 import Link from "next/link"
+import { Post } from "@/types"; // 1. IMPORT the unified Post type
 
-interface Post {
-  id: string
-  title: string
-  content: string
-  author: string
-  isAnonymous: boolean
-  category: string
-  tags: string[]
-  timestamp: Date
-  replies: number
-  likes: number
-  isModerated: boolean
-  isPinned?: boolean
-}
+// 2. The local "Post" interface has been DELETED from here.
 
 interface ForumPostProps {
   post: Post
@@ -35,7 +22,15 @@ export function ForumPost({ post }: ForumPostProps) {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
-  const [replyCount, setReplyCount] = useState(post.replies); // <-- NEW: State for reply count
+  const [replyCount, setReplyCount] = useState(post.replies);
+
+  // The 'author' property is not on the unified 'Post' type, use 'authorUsername' instead.
+  const authorName = post.isAnonymous ? "Anonymous" : post.authorUsername;
+  
+  // Handle the timestamp conversion, as it can be a Firebase Timestamp or a JS Date.
+  const postDate = post.timestamp instanceof Date 
+    ? post.timestamp 
+    : (post.timestamp as Timestamp).toDate();
 
   useEffect(() => {
     if (!user) return;
@@ -52,7 +47,7 @@ export function ForumPost({ post }: ForumPostProps) {
     const unsubscribe = onSnapshot(postRef, (doc) => {
       if (doc.exists()) {
         setLikeCount(doc.data().likes || 0);
-        setReplyCount(doc.data().replies || 0); // <-- NEW: Update reply count from Firestore
+        setReplyCount(doc.data().replies || 0);
       }
     });
     return () => unsubscribe();
@@ -94,18 +89,18 @@ export function ForumPost({ post }: ForumPostProps) {
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {post.isAnonymous ? "?" : post.author.charAt(0).toUpperCase()}
+                {post.isAnonymous ? "?" : authorName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-medium text-sm">{post.author}</span>
+                <span className="font-medium text-sm">{authorName}</span>
                 {post.isModerated && <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">Verified</Badge>}
                 {post.isPinned && <Pin className="h-4 w-4 text-primary" />}
               </div>
               <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
-                <span>{getTimeAgo(post.timestamp)}</span>
+                <span>{getTimeAgo(postDate)}</span>
                 <span>•</span>
                 <span>{post.category}</span>
               </div>
@@ -137,7 +132,6 @@ export function ForumPost({ post }: ForumPostProps) {
               <span className="text-sm">{replyCount} replies</span>
             </div>
           </div>
-          {/* UPDATED: This button is now a link to the detailed post page */}
           <Button asChild variant="outline" size="sm" className="bg-transparent">
             <Link href={`/forum/${post.id}`}>View Discussion</Link>
           </Button>

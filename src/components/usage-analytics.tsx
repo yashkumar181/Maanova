@@ -25,19 +25,16 @@ interface HourlyPattern {
   usage: number;
 }
 
-// 🔧 MODIFIED: Added an index signature to make this type compatible with Recharts
 interface FeatureUsage {
   name: string;
   value: number;
   color: string;
-  [key: string]: string | number; // This line fixes the error
 }
 
 interface AnalyticsDoc {
     type: 'chatSessions' | 'bookings' | 'resources' | 'forum';
     timestamp?: Timestamp;
     createdAt?: Timestamp;
-    collegeId?: string; // Add collegeId to the type
 }
 
 export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
@@ -53,8 +50,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
         const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid));
         const adminSnapshot = await getDocs(adminQuery);
         if (!adminSnapshot.empty) {
-          // Assuming the collegeId is stored in the admin document
-          setCollegeId(adminSnapshot.docs[0].data().collegeId); 
+          setCollegeId(adminSnapshot.docs[0].id);
         } else {
           setLoading(false);
         }
@@ -94,19 +90,26 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
       const startTimestamp = Timestamp.fromDate(startDate);
 
       try {
-        const collectionsToQuery = {
-          chatSessions: "chatSessions",
-          bookings: "appointments",
-          resources: "resourceAccessLogs",
-          forum: "forumPosts",
+        const collections = {
+          chatSessions: collection(db, "chatSessions"),
+          bookings: collection(db, "bookings"),
+          resources: collection(db, "resourceAccessLogs"),
+          forum: collection(db, "forumPosts"),
         };
 
-        const queries = Object.entries(collectionsToQuery).map(([key, collName]) => {
-          const timestampField = collName === 'appointments' ? 'createdAt' : 'timestamp';
-          return getDocs(query(collection(db, collName), where("collegeId", "==", collegeId), where(timestampField, ">=", startTimestamp)));
-        });
+        const queries = {
+          chatSessions: query(collections.chatSessions, where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
+          bookings: query(collections.bookings, where("collegeId", "==", collegeId), where("createdAt", ">=", startTimestamp)),
+          resources: query(collections.resources, where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
+          forum: query(collections.forum, where("collegeId", "==", collegeId), where("timestamp", ">=", startTimestamp)),
+        };
 
-        const [chatSnap, bookingSnap, resourceSnap, forumSnap] = await Promise.all(queries);
+        const [chatSnap, bookingSnap, resourceSnap, forumSnap] = await Promise.all([
+          getDocs(queries.chatSessions),
+          getDocs(queries.bookings),
+          getDocs(queries.resources),
+          getDocs(queries.forum),
+        ]);
 
         const dailyData: { [key: string]: DailyUsage } = {};
         const hourlyData: { [key: string]: { hour: string, usage: number } } = {};
@@ -143,7 +146,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
         setFeatureUsage([
           { name: "AI Chat", value: chatSnap.size, color: "#0891b2" },
           { name: "Resources", value: resourceSnap.size, color: "#f97316" },
-          { name: "Appointments", value: bookingSnap.size, color: "#22c55e" },
+          { name: "Bookings", value: bookingSnap.size, color: "#22c55e" },
           { name: "Forum", value: forumSnap.size, color: "#a855f7" },
         ]);
 
@@ -167,6 +170,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
 
   return (
     <div className="space-y-6">
+      {/* <-- RESPONSIVENESS: This grid now stacks on mobile and is 2 columns on medium screens and up. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Daily Feature Usage</h3>
@@ -198,6 +202,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
         </Card>
       </div>
 
+      {/* <-- RESPONSIVENESS: This grid also stacks on mobile now. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Feature Distribution</h3>

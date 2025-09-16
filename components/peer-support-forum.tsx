@@ -1,5 +1,4 @@
 "use client";
-
 import { ForumPost } from "./forum-post";
 import { Card } from "@/components/ui/card";
 import { Post } from '@/types'; // Adjust path if needed

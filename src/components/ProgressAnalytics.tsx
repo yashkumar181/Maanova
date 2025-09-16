@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { BarChart3, Smile, Frown, BrainCircuit } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
-// Helper function to categorize GAD-7 / PHQ-9 scores
+// Helper function to categorize scores
 const getSeverity = (score: number) => {
   if (score >= 15) return 'Severe';
   if (score >= 10) return 'Moderate';
@@ -30,12 +30,13 @@ type TrendData = {
   avgDepression?: number;
 };
 
+// ❌ REMOVED the conflicting PieLabelRenderProps interface
+
 export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState('All');
   const [selectedDepartment, setSelectedDepartment] = useState('All');
 
-  // State for all metrics
   const [totalCheckIns, setTotalCheckIns] = useState(0);
   const [avgWellBeing, setAvgWellBeing] = useState(0);
   const [avgAnxiety, setAvgAnxiety] = useState(0);
@@ -47,10 +48,7 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
   const [trendData, setTrendData] = useState<TrendData[]>([]);
 
   useEffect(() => {
-    if (!collegeId) {
-      setLoading(false);
-      return;
-    }
+    if (!collegeId) { setLoading(false); return; }
     setLoading(true);
 
     let entriesQuery: Query = collection(db, "progressEntries");
@@ -65,8 +63,7 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
 
     const unsubscribe = onSnapshot(entriesQuery, (snapshot) => {
       const entries = snapshot.docs.map(doc => doc.data());
-
-      // Reset all stats before recalculating for the new filter
+      
       setTotalCheckIns(0); setAvgWellBeing(0); setAvgAnxiety(0); setAvgDepression(0);
       setAnxietyDistribution([]); setDepressionDistribution([]);
       setGad7Count(0); setPhq9Count(0); setTrendData([]);
@@ -120,6 +117,9 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
         setTrendData(calculatedTrendData);
       }
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching progress entries:", error);
+        setLoading(false);
     });
 
     return () => unsubscribe();
@@ -140,10 +140,10 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
               <SelectTrigger id="year-filter"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Years</SelectItem>
-                <SelectItem value="Freshman">1st</SelectItem>
-                <SelectItem value="Sophomore">2nd</SelectItem>
-                <SelectItem value="Junior">3rd</SelectItem>
-                <SelectItem value="Senior">4th</SelectItem>
+                <SelectItem value="Freshman">Freshman</SelectItem>
+                <SelectItem value="Sophomore">Sophomore</SelectItem>
+                <SelectItem value="Junior">Junior</SelectItem>
+                <SelectItem value="Senior">Senior</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -153,11 +153,9 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
               <SelectTrigger id="dept-filter"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="All">All Depts</SelectItem>
-                <SelectItem value="Engineering">CSE</SelectItem>
-                <SelectItem value="Arts & Sciences">ECE</SelectItem>
-                <SelectItem value="Business">Mechanical</SelectItem>
-                <SelectItem value="Business">Civil</SelectItem>
-                <SelectItem value="Business">Electrical</SelectItem>
+                <SelectItem value="Engineering">Engineering</SelectItem>
+                <SelectItem value="Arts & Sciences">Arts & Sciences</SelectItem>
+                <SelectItem value="Business">Business</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -183,58 +181,57 @@ export function ProgressAnalytics({ collegeId }: ProgressAnalyticsProps) {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-  {/* ANXIETY PIE CHART (Unchanged) */}
-  <Card>
-    <CardHeader><CardTitle>Anxiety Distribution (GAD-7)</CardTitle></CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie data={anxietyDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={(entry: any) => gad7Count > 0 ? `${entry.name}: ${((entry.value / gad7Count) * 100).toFixed(0)}%` : entry.name}>
-            {anxietyDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-          </Pie>
-          <Tooltip formatter={(value: number) => [`${value} students`, gad7Count > 0 ? `${((value / gad7Count) * 100).toFixed(1)}%` : '0%']} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader><CardTitle>Anxiety Distribution (GAD-7)</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                {/* 🔧 MODIFIED: Accessing data via entry.payload to fix type error */}
+                <Pie data={anxietyDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={(entry: any) => gad7Count > 0 ? `${entry.payload.name}: ${((entry.payload.value / gad7Count) * 100).toFixed(0)}%` : entry.payload.name}>
+                  {anxietyDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                </Pie>
+                <Tooltip formatter={(value: number) => [`${value} students`, gad7Count > 0 ? `${((value / gad7Count) * 100).toFixed(1)}%` : '0%']} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-  {/* DEPRESSION PIE CHART (Unchanged) */}
-  <Card>
-    <CardHeader><CardTitle>Depression Distribution (PHQ-9)</CardTitle></CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie data={depressionDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={(entry: any) => phq9Count > 0 ? `${entry.name}: ${((entry.value / phq9Count) * 100).toFixed(0)}%` : entry.name}>
-            {depressionDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-          </Pie>
-          <Tooltip formatter={(value: number) => [`${value} students`, phq9Count > 0 ? `${((value / phq9Count) * 100).toFixed(1)}%` : '0%']} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
+        <Card>
+          <CardHeader><CardTitle>Depression Distribution (PHQ-9)</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                {/* 🔧 MODIFIED: Accessing data via entry.payload to fix type error */}
+                <Pie data={depressionDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label={(entry: any) => phq9Count > 0 ? `${entry.name}: ${((entry.value / phq9Count) * 100).toFixed(0)}%` : entry.name}>
+                  {depressionDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                </Pie>
+                <Tooltip formatter={(value: number) => [`${value} students`, phq9Count > 0 ? `${((value / phq9Count) * 100).toFixed(1)}%` : '0%']} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-  {/* 🔧 MODIFIED: The Trends Line Chart now spans the full width on its own row */}
-  <Card className="md:col-span-2">
-    <CardHeader><CardTitle>Daily Trends</CardTitle></CardHeader>
-    <CardContent>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={trendData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" name="Avg. Anxiety (GAD-7)" dataKey="avgAnxiety" stroke="#FF8042" />
-          <Line type="monotone" name="Avg. Depression (PHQ-9)" dataKey="avgDepression" stroke="#FF0000" />
-          <Line type="monotone" name="Avg. Well-being (WHO-5)" dataKey="avgWellBeing" stroke="#0088FE" />
-        </LineChart>
-      </ResponsiveContainer>
-    </CardContent>
-  </Card>
-</div>
-</div>
+        <Card className="md:col-span-2 lg:col-span-1">
+          <CardHeader><CardTitle>Daily Trends</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" name="Avg. Anxiety (GAD-7)" dataKey="avgAnxiety" stroke="#FF8042" />
+                <Line type="monotone" name="Avg. Depression (PHQ-9)" dataKey="avgDepression" stroke="#FF0000" />
+                <Line type="monotone" name="Avg. Well-being (WHO-5)" dataKey="avgWellBeing" stroke="#0088FE" />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

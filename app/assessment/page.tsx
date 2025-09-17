@@ -25,54 +25,54 @@ const gadQuestions = [
     text: "Feeling nervous, anxious, or on edge",
     category: "anxiety",
     categoryLabel: "Anxiety Symptoms",
-    emoji: ["😇", "😌", "😐", "😟", "😰", "🫨"]
+    emoji: ["😇", "😟", "🫨"]
   },
   {
     id: 2,
     text: "Not being able to stop or control worrying",
     category: "worry",
     categoryLabel: "Worry Control",
-    emoji: ["🧘", "😊", "🤔", "😣", "😫", "🌪️"]
+    emoji: ["🧘", "😣", "🌪️"]
   },
   {
     id: 3,
     text: "Worrying too much about different things",
     category: "worry", 
     categoryLabel: "Excessive Worry",
-    emoji: ["😴", "🙂", "😑", "😟", "😫", "😱"]
+    emoji: ["😴", "😟", "😱"]
   },
   {
     id: 4,
     text: "Trouble relaxing",
     category: "physical",
     categoryLabel: "Physical Tension", 
-    emoji: ["🧘", "😌", "😐", "😤", "🫨", "⚡"]
+    emoji: ["🧘", "😤", "⚡"]
   },
   {
     id: 5,
     text: "Being so restless that it's hard to sit still",
     category: "physical",
     categoryLabel: "Restlessness",
-    emoji: ["💺", "🚶", "🏃", "🌪️", "⚡", "🔥"]
+    emoji: ["💺","🌪️", "🔥"]
   },
   {
     id: 6,
     text: "Becoming easily annoyed or irritable",
     category: "mood",
     categoryLabel: "Irritability",
-    emoji: ["😊", "🙂", "😐", "😠", "🤬", "👹"]
+    emoji: ["😊", "😠", "👹"]
   },
   {
     id: 7,
     text: "Feeling afraid as if something awful might happen",
     category: "fear",
     categoryLabel: "Anticipatory Fear",
-    emoji: ["😇", "🙂", "😑", "😨", "😱", "💀"]
+    emoji: ["😇", "😨", "💀"]
   }
 ];
 
 const who5ScaleLabels = ["Never", "Rarely", "Sometimes", "Often", "Most of the time", "All the time"];
-const gadScaleLabels = ["Not at all", "Several days", "More than half", "Often", "Most days", "Nearly every day"];
+const gadScaleLabels = ["Not at all", "More than half", "Nearly every day"];
 
 export default function WHO5Assessment() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -85,7 +85,7 @@ export default function WHO5Assessment() {
 
   useEffect(() => {
   // TEMP override for testing
-  // Date.prototype.getDay = () => 0; // Simulate Sunday
+  //Date.prototype.getDay = () => 0; // Simulate Sunday
 
   const today = new Date();
   const isSunday = today.getDay() === 0;
@@ -102,7 +102,8 @@ export default function WHO5Assessment() {
 }, []);
 
 
-  const handleResponse = (questionId: number, value: number) => {
+  const handleResponse = (questionId: number, index: number) => {
+    const value = isGAD ? index + 1 : index; 
     setResponses(prev => ({ ...prev, [questionId]: value }));
   };
 
@@ -208,9 +209,12 @@ export default function WHO5Assessment() {
 
             {/* Scale Labels */}
             <div className="flex justify-between text-xs text-muted-foreground mb-6">
-              <span>0 - {scaleLabels[0]}</span>
-              <span>5 - {scaleLabels[5]}</span>
-            </div>
+            <span>{isGAD ? 1 : 0} - {scaleLabels[0]}</span>
+            <span>
+            {isGAD ? scaleLabels.length : scaleLabels.length - 1} - {scaleLabels[scaleLabels.length - 1]}
+          </span>
+          </div>
+
           </CardContent>
         </Card>
 

@@ -105,7 +105,7 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Your GAD-7 Results</h1>
           <p className="text-muted-foreground">
-            Based on your responses from the past two weeks
+            Based on your responses from the past week
           </p>
         </div>
 

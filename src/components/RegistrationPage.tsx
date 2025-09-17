@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase-config';
 import { useToast } from './ui/use-toast';
 import { Button } from './ui/button';
@@ -50,11 +50,16 @@ export function RegistrationPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.gmail, formData.password);
       const user = userCredential.user;
+      
+      // We still generate a unique ID to use as the document ID
       const collegeId = `CLG-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
 
       const { password, confirmPassword, ...dataToSave } = formData;
+      
+      // The document ID is the newly generated collegeId
       await setDoc(doc(db, "admins", collegeId), {
         uid: user.uid,
+        collegeId: collegeId, // 👈 YOUR SOLUTION: Also save the collegeId as a field
         ...dataToSave,
       });
 
@@ -81,14 +86,12 @@ export function RegistrationPage() {
   );
 
   return (
+    // Your JSX for the registration form remains the same
     <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 p-4 transition-colors duration-500">
-      <div className="absolute top-6 right-6">
-        <ThemeToggle />
-      </div>
+      <div className="absolute top-6 right-6"><ThemeToggle /></div>
       <Card className="w-full max-w-3xl my-8 border-t-4 border-primary">
         <CardHeader className="text-center">
           <CardTitle>Create an Admin Account</CardTitle>
-          {/* CORRECTED: Replaced the apostrophe with &apos; to fix the deployment error */}
           <CardDescription>Join to support your students&apos; mental wellness journey.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -102,41 +105,15 @@ export function RegistrationPage() {
                 {renderInput('confirmPassword', 'Confirm Password', 'password')}
               </div>
             </fieldset>
-
-            <fieldset>
-              <legend className="text-lg font-semibold border-b border-border pb-2 mb-4 w-full">College & Counsellor</legend>
-              <div className="grid md:grid-cols-2 gap-4">
-                {renderInput('collegeName', 'College Name')}
-                {renderInput('phone', 'Phone', 'tel')}
-                {renderInput('counsellorName', 'Head Counsellor Name')}
-                {renderInput('contactDetails', 'Counsellor Contact Info')}
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend className="text-lg font-semibold border-b border-border pb-2 mb-4 w-full">Location</legend>
-              <div className="grid md:grid-cols-3 gap-4">
-                {renderInput('country', 'Country')}
-                {renderInput('state', 'State')}
-                {renderInput('city', 'City')}
-              </div>
-            </fieldset>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Brief Description</Label>
-              <Textarea id="description" value={formData.description} onChange={handleChange} placeholder="Tell us about your institution..." required />
-            </div>
-            
+            {/* ... other fieldsets ... */}
+            <fieldset><legend className="text-lg font-semibold border-b border-border pb-2 mb-4 w-full">College & Counsellor</legend><div className="grid md:grid-cols-2 gap-4">{renderInput('collegeName', 'College Name')}{renderInput('phone', 'Phone', 'tel')}{renderInput('counsellorName', 'Head Counsellor Name')}{renderInput('contactDetails', 'Counsellor Contact Info')}</div></fieldset>
+            <fieldset><legend className="text-lg font-semibold border-b border-border pb-2 mb-4 w-full">Location</legend><div className="grid md:grid-cols-3 gap-4">{renderInput('country', 'Country')}{renderInput('state', 'State')}{renderInput('city', 'City')}</div></fieldset>
+            <div className="space-y-2"><Label htmlFor="description">Brief Description</Label><Textarea id="description" value={formData.description} onChange={handleChange} placeholder="Tell us about your institution..." required /></div>
             <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Creating Account...' : 'Create Account'}</Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center text-sm">
-          <p className="text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="font-medium text-primary hover:underline">
-              Login here
-            </Link>
-          </p>
+          <p className="text-muted-foreground">Already have an account?{' '}<Link href="/login" className="font-medium text-primary hover:underline">Login here</Link></p>
         </CardFooter>
       </Card>
     </div>

@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from "../lib/firebase-config";
+import { auth } from "../lib/firebase-config"; // We don't need 'db' here anymore for login
 import { useToast } from './ui/use-toast';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -14,8 +13,8 @@ import { ThemeToggle } from './ThemeToggle';
 import Link from 'next/link';
 
 export function LoginPage() {
-  const [collegeId, setCollegeId] = useState('');
-  const [username, setUsername] = useState('');
+  // REMOVED: collegeId and username are no longer needed for login
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -25,29 +24,22 @@ export function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!collegeId || !username || !password) {
+    if (!email || !password) {
       toast({ title: "Error", description: "Please fill in all fields.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
 
     try {
-      const adminDocRef = doc(db, "admins", collegeId);
-      const docSnap = await getDoc(adminDocRef);
+      // Login is now simpler and more secure, only using email and password
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      toast({ title: "Login Successful!", description: "Redirecting to your dashboard..." });
+      router.push('/'); 
 
-      if (docSnap.exists() && docSnap.data().username === username) {
-        const adminData = docSnap.data();
-        await signInWithEmailAndPassword(auth, adminData.gmail, password);
-        
-        toast({ title: "Login Successful!", description: "Redirecting to your dashboard..." });
-        router.push('/'); 
-
-      } else {
-        toast({ title: "Error", description: "Invalid College ID or Username.", variant: "destructive" });
-      }
     } catch (error) {
       console.error(error);
-      toast({ title: "Login Failed", description: "Invalid credentials or a network error occurred.", variant: "destructive" });
+      toast({ title: "Login Failed", description: "Invalid email or password.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -66,12 +58,8 @@ export function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="collegeId">College Unique ID</Label>
-              <Input id="collegeId" type="text" placeholder="e.g., CLG-ABC123XYZ" value={collegeId} onChange={(e) => setCollegeId(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" type="text" placeholder="Your username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="admin@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

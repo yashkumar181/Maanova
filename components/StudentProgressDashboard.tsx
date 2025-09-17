@@ -9,9 +9,10 @@ import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestor
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react'; // 👈 ADDED ICONS
+import { cn } from '@/lib/utils';
 
-// Define the structure of our progress data
+// --- Data Structures (Unchanged) ---
 interface ProgressEntry {
   id: string;
   timestamp: Date;
@@ -19,8 +20,6 @@ interface ProgressEntry {
   questionnaireType: string;
   individualResponses: Record<string, number>;
 }
-
-// Define the factors for the individual charts
 const who5Factors = [
   { key: "Mood", name: "Mood", question: "Felt cheerful and in good spirits", color: "#8884d8" },
   { key: "Calmness", name: "Calmness", question: "Felt calm and relaxed", color: "#82ca9d" },
@@ -28,16 +27,30 @@ const who5Factors = [
   { key: "Restfulness", name: "Restfulness", question: "Woke up feeling fresh and rested", color: "#ff8042" },
   { key: "Engagement", name: "Engagement", question: "Daily life has been filled with interesting things", color: "#0088FE" },
 ];
-
-// Map question IDs to factor names for data processing
 const who5QuestionMap: Record<string, string> = {
-  "1": "Mood",
-  "2": "Calmness",
-  "3": "Energy",
-  "4": "Restfulness",
-  "5": "Engagement",
+  "1": "Mood", "2": "Calmness", "3": "Energy", "4": "Restfulness", "5": "Engagement",
 };
 
+// --- Custom Tooltip (Unchanged) ---
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="p-3 text-sm bg-background/95 border border-border shadow-lg rounded-lg backdrop-blur-sm">
+        <p className="font-bold text-foreground mb-2">{label}</p>
+        {payload.map((p, i) => (
+          <div key={i} className="flex items-center justify-between space-x-4">
+             <div className="flex items-center">
+                <span className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: p.color || p.stroke }} />
+                <p className="text-muted-foreground">{p.name}:</p>
+             </div>
+             <p className="font-semibold text-foreground">{p.value}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 export const StudentProgressDashboard = () => {
   const { user } = useAuth();
@@ -52,7 +65,6 @@ export const StudentProgressDashboard = () => {
         where("studentId", "==", user.uid),
         orderBy("timestamp", "asc")
       );
-
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const data: ProgressEntry[] = [];
         querySnapshot.forEach((doc) => {
@@ -70,25 +82,23 @@ export const StudentProgressDashboard = () => {
         setProgressData(data);
         setLoading(false);
       });
-
       return () => unsubscribe();
     }
   }, [user]);
 
-  // Format data for all charts
   const formattedChartData = progressData.map(entry => {
-    // 👇 FIX IS HERE: Explicitly type the 'scores' object to allow dynamic keys
-    const scores: { [key: string]: string | number } = { 
-      date: entry.timestamp.toLocaleDateString() 
-    };
-    
+    const scores: { [key: string]: string | number } = { date: entry.timestamp.toLocaleDateString() };
     for (const qId in who5QuestionMap) {
       scores[who5QuestionMap[qId]] = entry.individualResponses[qId];
     }
-    scores["WHO-5 Score"] = entry.score; // Also include the total score
+    scores["WHO-5 Score"] = entry.score;
     return scores;
   });
 
+  // 👇 ADDED: Logic to calculate stats for the new cards
+  const latestScore = progressData.length > 0 ? progressData[progressData.length - 1].score : 0;
+  const firstScore = progressData.length > 0 ? progressData[0].score : 0;
+  const overallChange = latestScore - firstScore;
 
   if (loading) {
     return (
@@ -100,17 +110,50 @@ export const StudentProgressDashboard = () => {
   }
   
   if (progressData.length < 2) { 
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <p>You need to complete at least two assessments to see your progress trends. Keep up the great work!</p>
-          </CardContent>
-        </Card>
-      );
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p>You need to complete at least two assessments to see your progress trends. Keep up the great work!</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-6">
+      
+      {/* 👇 ADDED: At-a-Glance Stat Cards Section 👇 */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Latest Score</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">{latestScore}<span className="text-2xl text-muted-foreground">/25</span></div>
+            <p className="text-xs text-muted-foreground">Your most recent WHO-5 well-being score.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overall Trend</CardTitle>
+            {overallChange >= 0 ? <ArrowUpRight className="h-4 w-4 text-green-500" /> : <ArrowDownRight className="h-4 w-4 text-red-500" />}
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-4xl font-bold", overallChange >= 0 ? "text-green-500" : "text-red-500")}>
+              {overallChange >= 0 ? `+${overallChange}` : overallChange}
+            </div>
+            <p className="text-xs text-muted-foreground">Change since your first assessment.</p>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-1 md:col-span-2">
+           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Summary</CardTitle></CardHeader>
+           <CardContent><p className="text-sm text-muted-foreground">Consistently tracking your well-being is a key step in self-care. This dashboard helps you visualize your journey.</p></CardContent>
+        </Card>
+      </div>
+      {/* 👆 End of Stat Cards Section 👆 */}
+
+      {/* --- Existing Graph Layout (Unchanged) --- */}
       <Card>
         <CardHeader>
           <CardTitle>Overall Well-being Trend</CardTitle>

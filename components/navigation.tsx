@@ -7,7 +7,7 @@ import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon, Menu, X,Check } from "lucide-react"
+import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon, Menu, X, Check, LineChart } from "lucide-react" // 👈 ADDED LineChart
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import ThemeToggle from "@/components/ThemeToggle"
@@ -60,7 +60,6 @@ export function Navigation() {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  // Show a skeleton loader on the server and initial client render to avoid hydration errors
   if (!isMounted) {
     return (
       <header className="bg-card border-b border-border sticky top-0 z-50">
@@ -117,8 +116,17 @@ export function Navigation() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <Link href="/profile"><DropdownMenuItem className="cursor-pointer"><UserIcon className="mr-2 h-4 w-4" /><span>{t('navigation.profile')}</span></DropdownMenuItem></Link>
-                  {/* The new "My Appointments" link is here */}
                   <Link href="/my-appointments"><DropdownMenuItem className="cursor-pointer"><Calendar className="mr-2 h-4 w-4" />My Appointments</DropdownMenuItem></Link>
+                  
+                  {/* 👇 NEW CODE BLOCK STARTS HERE 👇 */}
+                  <Link href="/profile/progress">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <LineChart className="mr-2 h-4 w-4" />
+                      <span>View Progress</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  {/* 👆 NEW CODE BLOCK ENDS HERE 👆 */}
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer"><LogOut className="mr-2 h-4 w-4" /><span>{t('navigation.sign_out')}</span></DropdownMenuItem>
                 </DropdownMenuContent>
@@ -140,12 +148,12 @@ export function Navigation() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-border p-4 space-y-2">
           {navLinks}
-           {!user && !loading && (
+            {!user && !loading && (
              <div className="border-t pt-4 space-y-2">
                 <Link href="/login" onClick={closeMobileMenu}><Button variant="outline" className="w-full">{t('navigation.login')}</Button></Link>
                 <Link href="/register" onClick={closeMobileMenu}><Button className="w-full">{t('navigation.register')}</Button></Link>
              </div>
-           )}
+            )}
         </div>
       )}
     </header>

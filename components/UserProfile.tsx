@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // 👈 ADDED: For navigation
 import { onAuthStateChanged, signOut, updateProfile, User } from "firebase/auth";
 import { doc, getDoc, setDoc, DocumentData } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { LineChart } from "lucide-react"; // 👈 ADDED: For the button icon
 
 export function UserProfile() {
     const { toast } = useToast();
@@ -133,7 +135,18 @@ export function UserProfile() {
                             <InfoRow label="Email" value={user?.email} />
                             <InfoRow label="Year of Study" value={yearOfStudy || "Not set"} />
                             <InfoRow label="Department" value={department || "Not set"} />
-                            <Button onClick={() => setIsEditing(true)} className="w-full mt-4">Edit Profile</Button>
+                            
+                            {/* 👇 NEW CODE BLOCK STARTS HERE 👇 */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                                <Button onClick={() => setIsEditing(true)} variant="outline">Edit Profile</Button>
+                                <Link href="/profile/progress">
+                                    <Button className="w-full">
+                                        <LineChart className="h-4 w-4 mr-2" />
+                                        View Progress
+                                    </Button>
+                                </Link>
+                            </div>
+                            {/* 👆 NEW CODE BLOCK ENDS HERE 👆 */}
                         </div>
                     ) : (
                         // --- EDIT MODE ---
@@ -165,7 +178,6 @@ export function UserProfile() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {/* 🔧 MODIFIED: Changed to a responsive grid for balanced buttons */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-4">
                                 <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
                                 <Button onClick={handleSave} disabled={isSaving}>{isSaving ? "Saving..." : "Save Changes"}</Button>

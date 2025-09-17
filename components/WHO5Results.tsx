@@ -1,5 +1,4 @@
 // In components/WHO5Results.tsx
-
 "use client";
 import { useEffect } from 'react'; // No longer need useState
 import { useAuth } from '@/hooks/useAuth';

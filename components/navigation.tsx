@@ -7,7 +7,7 @@ import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon, Menu, X } from "lucide-react"
+import { Heart, MessageCircle, Calendar, BookOpen, Users, LogOut, User as UserIcon, Menu, X,Check } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import ThemeToggle from "@/components/ThemeToggle"
@@ -84,6 +84,7 @@ export function Navigation() {
       <Link href="/booking" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />{t('navigation.booking')}</Button></Link>
       <Link href="/resources" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />{t('navigation.resources')}</Button></Link>
       <Link href="/forum" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />{t('navigation.forum')}</Button></Link>
+      <Link href="/who5-assessment" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Check className="mr-2 h-4 w-4" />{t('WHO-5')}</Button></Link>
     </>
   );
 

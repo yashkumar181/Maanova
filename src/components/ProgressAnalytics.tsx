@@ -31,6 +31,12 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?:
   return null;
 };
 
+// --- DailyAverageData Interface ---
+interface DailyAverageData {
+    date: string;
+    "Average Score": number;
+}
+
 export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
   const [allResponses, setAllResponses] = useState<ResponseEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +80,7 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
     const uniqueYears = ['all', ...Array.from(new Set(allResponses.map(r => r.studentYear).filter(y => y)))];
     const uniqueDepts = ['all', ...Array.from(new Set(allResponses.map(r => r.studentDept).filter(d => d)))];
 
-    const calculateDailyAverages = (type: "WHO5" | "PHQ9" | "GAD7") => {
+    const calculateDailyAverages = (type: "WHO5" | "PHQ9" | "GAD7"): DailyAverageData[] => {
       const dailyScores: Record<string, { sum: number, count: number }> = {};
       allResponses.forEach(r => {
         if (r.questionnaireType === type && r.timestamp) {
@@ -101,7 +107,7 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
   
   if (allResponses.length === 0) { return <Card><CardHeader><CardTitle>No Data Yet</CardTitle><CardContent><p>No students have completed an assessment yet. Data will appear here in real-time once they do.</p></CardContent></CardHeader></Card>; }
 
-  const renderTrendChart = (data: any[], dataKey: string, strokeColor: string, domain: [number, number]) => (
+  const renderTrendChart = (data: DailyAverageData[], dataKey: string, strokeColor: string, domain: [number, number]) => (
       <CardContent className="pt-6">
         {data.length > 1 ? (
           <ResponsiveContainer width="100%" height={300}>
@@ -139,7 +145,6 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
         <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Avg. GAD-7</CardTitle><Shield className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.avgGAD7} / 21</div></CardContent></Card>
       </div>
 
-      {/* --- UPDATED: Tabbed Interface for Daily Average Charts --- */}
       <Card>
         <CardHeader>
             <CardTitle>Daily Average Score Trends</CardTitle>
@@ -147,7 +152,8 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="who5">
-                <TabsList className="grid w-full grid-cols-3">
+                {/* 👇 FIX IS HERE: Made the grid responsive 👇 */}
+                <TabsList className="grid w-full h-auto grid-cols-1 sm:grid-cols-3">
                     <TabsTrigger value="who5">Well-being (WHO-5)</TabsTrigger>
                     <TabsTrigger value="phq9">Depression (PHQ-9)</TabsTrigger>
                     <TabsTrigger value="gad7">Anxiety (GAD-7)</TabsTrigger>

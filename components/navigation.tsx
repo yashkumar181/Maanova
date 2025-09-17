@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { signOut } from "firebase/auth"
@@ -83,7 +82,7 @@ export function Navigation() {
       <Link href="/booking" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Calendar className="mr-2 h-4 w-4" />{t('navigation.booking')}</Button></Link>
       <Link href="/resources" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><BookOpen className="mr-2 h-4 w-4" />{t('navigation.resources')}</Button></Link>
       <Link href="/forum" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Users className="mr-2 h-4 w-4" />{t('navigation.forum')}</Button></Link>
-      <Link href="/who5-assessment" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Check className="mr-2 h-4 w-4" />{t('WHO-5')}</Button></Link>
+      <Link href="/assessment" onClick={closeMobileMenu}><Button variant="ghost" className="w-full justify-start md:w-auto"><Check className="mr-2 h-4 w-4" />{t('Assessment')}</Button></Link>
     </>
   );
 

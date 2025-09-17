@@ -19,7 +19,14 @@ interface ResponseEntry {
   timestamp: { toDate: () => Date };
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: any[], label?: string }) => {
+// 👇 FIX IS HERE: Defined a specific type for the tooltip payload to replace 'any'
+interface TooltipPayload {
+  name: string;
+  value: number | string;
+  stroke: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: TooltipPayload[], label?: string }) => {
   if (active && payload && payload.length) {
     return (
       <div className="p-2 text-sm bg-background/95 border border-border shadow-lg rounded-lg">
@@ -31,7 +38,6 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?:
   return null;
 };
 
-// --- DailyAverageData Interface ---
 interface DailyAverageData {
     date: string;
     "Average Score": number;
@@ -152,7 +158,6 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="who5">
-                {/* 👇 FIX IS HERE: Made the grid responsive 👇 */}
                 <TabsList className="grid w-full h-auto grid-cols-1 sm:grid-cols-3">
                     <TabsTrigger value="who5">Well-being (WHO-5)</TabsTrigger>
                     <TabsTrigger value="phq9">Depression (PHQ-9)</TabsTrigger>

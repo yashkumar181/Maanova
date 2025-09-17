@@ -3,15 +3,11 @@
 import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, DocumentData } from "firebase/firestore";
+import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { auth, db } from '../lib/firebase-config';
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useToast } from "./ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,7 +17,7 @@ import { ModerationTools } from "@/components/moderation-tools"
 import { TrendAnalysis } from "@/components/trend-analysis"
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3, Users2, Shield, TrendingUp, Download, CalendarDays, BookOpen, LogOut, HeartPulse } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ProgressAnalytics } from './ProgressAnalytics';
 import { CounselorManagement } from './counselor-management';
 import { AppointmentViewer } from './appointment-viewer';
@@ -33,76 +29,33 @@ interface AdminData extends DocumentData {
   username: string;
   gmail: string;
   collegeName: string;
-  collegeId?: string;
+  collegeId: string;
 }
 
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState("7d");
   const [loading, setLoading] = useState(true);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
-  const [showSetupModal, setShowSetupModal] = useState(false);
-  const [inputCollegeId, setInputCollegeId] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push('/login');
-        return;
-      }
-
-      const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid));
-      const adminSnapshot = await getDocs(adminQuery);
-      
-      if (!adminSnapshot.empty) {
-        const doc = adminSnapshot.docs[0];
-        const data = { id: doc.id, ...doc.data() } as AdminData;
-        setAdminData(data);
-        
-        if (!data.collegeId) {
-          setShowSetupModal(true);
-        }
       } else {
-        console.error("CRITICAL: No admin document found for this UID.");
+        const adminQuery = query(collection(db, "admins"), where("uid", "==", user.uid));
+        const adminSnapshot = await getDocs(adminQuery);
+        if (!adminSnapshot.empty) {
+          const doc = adminSnapshot.docs[0];
+          setAdminData({ id: doc.id, ...doc.data() } as AdminData);
+        } else {
+          console.error("CRITICAL: No admin document found for this UID. Ensure the 'uid' and 'collegeId' fields exist in your Firestore 'admins' collection.");
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [router]);
-
-  const handleCollegeIdSubmit = async () => {
-    if (!inputCollegeId.trim() || !adminData) {
-        toast({ title: "Error", description: "Please enter a valid College ID.", variant: "destructive" });
-        return;
-    }
-    
-    // Simple validation to ensure the user confirms their actual ID.
-    if (inputCollegeId.trim() !== adminData.id) {
-        toast({ title: "Error", description: "The College ID you entered does not match your profile.", variant: "destructive" });
-        return;
-    }
-
-    setIsSaving(true);
-    try {
-      const adminDocRef = doc(db, "admins", adminData.id);
-      await updateDoc(adminDocRef, {
-        collegeId: adminData.id
-      });
-
-      setAdminData(prev => prev ? { ...prev, collegeId: adminData.id } : null);
-      setShowSetupModal(false);
-      toast({ title: "Success!", description: "Your profile is now complete." });
-
-    } catch (error) {
-      toast({ title: "Error", description: "An error occurred while saving.", variant: "destructive" });
-      console.error(error);
-    } finally {
-        setIsSaving(false);
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -123,38 +76,6 @@ export function AdminDashboard() {
         </div>
         <Skeleton className="h-96 w-full" />
       </div>
-    );
-  }
-
-  if (showSetupModal) {
-    return (
-      <Dialog open={true}>
-        {/* 👇 FIX IS HERE: Removed 'hideCloseButton' and added 'onEscapeKeyDown' 👇 */}
-        <DialogContent 
-          className="sm:max-w-[425px]" 
-          onInteractOutside={(e) => e.preventDefault()} 
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>One-Time Account Setup</DialogTitle>
-            <DialogDescription>
-              To complete your profile, please confirm your unique College ID. You will only need to do this once.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="collegeId" className="text-right">College ID</Label>
-              <Input id="collegeId" value={inputCollegeId} onChange={(e) => setInputCollegeId(e.target.value)} placeholder="Enter your ID here" className="col-span-3" />
-            </div>
-            <p className="text-xs text-muted-foreground text-center col-span-4 pt-2">Your ID is: <span className="font-mono bg-muted p-1 rounded-md">{adminData.id}</span></p>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleCollegeIdSubmit} disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save and Continue"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     );
   }
 
@@ -195,7 +116,8 @@ export function AdminDashboard() {
 
       <OverviewMetrics dateRange={dateRange} />
 
-      <Tabs defaultValue="progress" className="w-full">
+      {/* 👇 FIX IS HERE: Changed defaultValue from "progress" to "usage" 👇 */}
+      <Tabs defaultValue="usage" className="w-full">
         <div className="hidden md:block">
           <TabsList className="w-full justify-start"><TabsTrigger value="usage"><BarChart3 className="mr-2 h-4 w-4" />Usage</TabsTrigger><TabsTrigger value="trends"><TrendingUp className="mr-2 h-4 w-4" />Trends</TabsTrigger><TabsTrigger value="moderation"><Shield className="mr-2 h-4 w-4" />Moderation</TabsTrigger><TabsTrigger value="appointments"><CalendarDays className="mr-2 h-4 w-4" />Appointments</TabsTrigger><TabsTrigger value="counselors"><Users2 className="mr-2 h-4 w-4" />Counselors</TabsTrigger><TabsTrigger value="resources"><BookOpen className="mr-2 h-4 w-4" />Resources</TabsTrigger><TabsTrigger value="progress"><HeartPulse className="mr-2 h-4 w-4" />Progress</TabsTrigger></TabsList>
         </div>
@@ -210,16 +132,16 @@ export function AdminDashboard() {
         <TabsContent value="counselors" className="mt-6"><CounselorManagement /></TabsContent>
         <TabsContent value="resources" className="mt-6"><ResourceManagement /></TabsContent>
         <TabsContent value="progress" className="mt-6">
-          {adminData.collegeId ? (
-            <ProgressAnalytics collegeId={adminData.collegeId} />
+          {adminData.id ? (
+            <ProgressAnalytics collegeId={adminData.id} />
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Setup Required</CardTitle>
-                <CardContent className="pt-4">
-                  <p>Please complete the one-time setup prompt to view progress analytics.</p>
-                </CardContent>
+                <CardTitle>Configuration Error</CardTitle>
               </CardHeader>
+              <CardContent>
+                <p>Could not determine College ID from your admin profile.</p>
+              </CardContent>
             </Card>
           )}
         </TabsContent>

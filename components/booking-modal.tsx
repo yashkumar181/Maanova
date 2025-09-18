@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
-import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Clock, CheckCircle, AlertCircle, Video, Users } from "lucide-react"
@@ -18,20 +17,14 @@ import { useToast } from "./ui/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 
 interface Counselor {
-  id: string
-  name: string
-  title: string
-  specialties: string[]
-  image?: string
+  id: string; name: string; title: string; specialties: string[]; image?: string;
 }
 
 interface BookingModalProps {
-  counselor: Counselor | null
-  isOpen: boolean
-  onClose: () => void
+  counselor: Counselor | null; isOpen: boolean; onClose: () => void;
 }
 
-const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00"]
+const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00"];
 
 export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) {
   const { user } = useAuth()
@@ -47,44 +40,36 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
     e.preventDefault();
 
     if (!counselor || !selectedDate || !selectedTime || !user) {
-      toast({ title: "Error", description: "Missing required information.", variant: "destructive" })
-      return
+      toast({ title: "Error", description: "Missing required information.", variant: "destructive" });
+      return;
     }
     
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      // Fetch the student's profile document from Firestore
       const studentDocRef = doc(db, "students", user.uid);
       const studentDocSnap = await getDoc(studentDocRef);
 
-      // Extract username and collegeId from the document
-      const studentUsername = studentDocSnap.exists() ? studentDocSnap.data().username : "anonymous_user";
-      const studentCollegeId = studentDocSnap.exists() ? studentDocSnap.data().collegeId : null;
-
-      // Optional: Prevent booking if collegeId is missing from the student's profile
-      if (!studentCollegeId) {
-        toast({ title: "Profile Incomplete", description: "Could not find your College ID. Please update your profile before booking.", variant: "destructive" });
+      if (!studentDocSnap.exists() || !studentDocSnap.data().collegeId) {
+        toast({ title: "Profile Incomplete", description: "Could not find your College ID. Please ensure your profile is complete before booking.", variant: "destructive" });
         setIsSubmitting(false);
         return;
       }
-
+      
+      const studentData = studentDocSnap.data();
       const [hours, minutes] = selectedTime.split(':').map(Number);
       const requestedDateTime = new Date(selectedDate);
       requestedDateTime.setHours(hours, minutes, 0, 0);
 
-      // Add all necessary fields, including collegeId, to the appointment data
       await addDoc(collection(db, "appointments"), {
         counselorId: counselor.id,
         counselorName: counselor.name,
         studentId: user.uid,
-        studentName: user.displayName || "Anonymous Student",
-        studentUsername: studentUsername,
-        collegeId: studentCollegeId, // This is the new, important field
+        studentUsername: studentData.username || "anonymous_user",
+        collegeId: studentData.collegeId, // This is the crucial field
         requestedTime: Timestamp.fromDate(requestedDateTime),
         reason: reason,
         status: "pending",
         appointmentType: appointmentType,
-        meetingLink: "",
         createdAt: Timestamp.now(),
       });
 
@@ -98,12 +83,11 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
   }
 
   const handleClose = () => {
-    setIsBooked(false)
-    setAppointmentType('online')
-    onClose()
+    setIsBooked(false);
+    onClose();
   }
 
-  if (!counselor) return null
+  if (!counselor) return null;
 
   if (isBooked) {
     return (
@@ -112,15 +96,14 @@ export function BookingModal({ counselor, isOpen, onClose }: BookingModalProps) 
           <div className="text-center p-8">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Appointment Requested!</h3>
-            <p className="text-muted-foreground mb-4">
-              Your request has been sent. You will be notified once the counselor confirms the appointment.
-            </p>
+            <p className="text-muted-foreground mb-4">You will be notified once the counselor confirms the appointment.</p>
             <Button onClick={handleClose}>Done</Button>
           </div>
         </DialogContent>
       </Dialog>
-    )
+    );
   }
+
 
   return (
      <Dialog open={isOpen} onOpenChange={handleClose}>

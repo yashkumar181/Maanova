@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, Timestamp, doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, Timestamp, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase-config";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
@@ -14,27 +14,31 @@ import { Video, Users, Check, X } from "lucide-react";
 
 interface Appointment {
   id: string;
-  studentName?: string;
   studentUsername?: string;
   counselorName?: string;
   requestedTime: Timestamp;
   status: 'pending' | 'accepted' | 'declined';
   appointmentType: 'online' | 'offline';
-  meetingLink?: string;
   hostMeetingLink?: string;
-  reason?: string;
 }
 
-export function AppointmentViewer() {
+// 👇 The component now accepts the collegeId as a prop
+export function AppointmentViewer({ collegeId }: { collegeId: string }) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeMeetingUrl, setActiveMeetingUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!collegeId) {
+      setLoading(false);
+      return; // Do nothing if there's no collegeId
+    }
     setLoading(true);
+    // 👇 The query is now filtered by collegeId
     const appointmentsQuery = query(
       collection(db, "appointments"),
+      where("collegeId", "==", collegeId),
       orderBy("requestedTime", "desc")
     );
     const unsubscribe = onSnapshot(appointmentsQuery, (snapshot) => {
@@ -45,7 +49,8 @@ export function AppointmentViewer() {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [collegeId]);
+
 
   const handleUpdateStatus = async (id: string, status: 'accepted' | 'declined') => {
     const appointmentRef = doc(db, "appointments", id);

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FloatingElement } from "./FloatingElement";
 import { Button } from "./ui/button";
 import { Sparkles, Heart, Menu, X, UserCheck, ShieldCheck } from "lucide-react";
-import { MobileThemeToggle, ThemeToggle } from "@/components/ThemeToggle";
+import {ThemeToggle } from "@/components/ThemeToggle";
 
 const inspirationalPhrases = [
   "Every step forward is progress 💚",
@@ -122,27 +122,6 @@ export function InspirationalBanner() {
               >
                 Helplines
               </button>
-              <div className="border-t border-border/30 pt-3 space-y-2">
-                <a href="https://mental-health-platform-eosin.vercel.app/" className="block">
-                <Button 
-                  size="sm"
-                  className="w-full justify-start hover:bg-primary/90
-                  text-primary-foreground"
-                >
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Student Access
-                </Button>
-                </a>
-                <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/" className="block">
-                <Button 
-                  size="sm"
-                  className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  <ShieldCheck className="h-4 w-4 mr-2" />
-                  Admin Access
-                </Button>
-                </a>
-              </div>
             </div>
           )}
         </div>

@@ -53,6 +53,29 @@ const Index = () => {
               A safe space for college students to find support, resources, and healing. 
               Your mental health journey matters, and you're not alone.
             </p>
+
+            {/* Mobile Login Buttons */}
+            <div className="md:hidden flex flex-col gap-3 mb-12 animate-slide-up">
+              <a href="https://mental-health-platform-eosin.vercel.app/" className="block">
+              <Button 
+                size="sm"
+                className="w-full max-w-xs mx-auto bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Student Access
+              </Button>
+              </a>
+              <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/" className="block">
+              <Button 
+                size="sm"
+                className="w-full max-w-xs mx-auto bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Admin Access
+              </Button>
+              </a>
+            </div>
+
           </div>
         </div>
       </section>

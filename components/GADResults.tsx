@@ -170,7 +170,7 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
                   />
                   <Bar 
                     dataKey="score" 
-                    fill="var(--color-score)" 
+                    fill="var(--chart-1)"  
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>

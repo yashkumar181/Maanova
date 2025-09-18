@@ -89,7 +89,7 @@ export default function WHO5Assessment() {
   //Date.prototype.getDay = () => 0; // Simulate Sunday
 
   const today = new Date();
-  const isSunday = today.getDay() === 0;
+  const isSunday = today.getDay() === 4;
   setIsGAD(isSunday);
 
   if (isSunday) {
@@ -195,7 +195,7 @@ export default function WHO5Assessment() {
                   className={cn(
                     "flex flex-col items-center p-4 rounded-xl border-2 transition-all",
                     "hover:border-primary/50 hover:bg-primary/5",
-                    responses[question.id] === index
+                    responses[question.id] === (isGAD? index+1:index)
                       ? "border-primary bg-primary/10 shadow-lg"
                       : "border-border bg-card"
                   )}

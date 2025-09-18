@@ -91,7 +91,7 @@ export default function AssessmentPage() {
       setTodaysGAD7(gad7);
       setTodaysPHQ9(phq9);
 
-      const isSpecialDay = today.getDay() === 4; // Thursday
+      const isSpecialDay = today.getDay() === 5; // Thursday
 
       if (!isSpecialDay && who5) {
         handleViewResult(who5);

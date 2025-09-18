@@ -7,6 +7,7 @@ import Script from "next/script";
 import { Navigation } from "@/components/navigation";
 import { Providers } from "@/components/Providers";
 
+
 export const metadata: Metadata = {
   title: "MindCare | Your Mental Health Platform",
   description: "A safe space for student mental health support.",

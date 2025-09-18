@@ -33,7 +33,7 @@ interface FeatureUsage {
 }
 
 interface AnalyticsDoc {
-    type: 'chatSessions' | 'bookings' | 'resources' | 'forum';
+    type: 'chatSessions' | 'appointments' | 'resources' | 'forum';
     timestamp?: Timestamp;
     createdAt?: Timestamp;
 }
@@ -93,7 +93,7 @@ export function UsageAnalytics({ dateRange }: UsageAnalyticsProps) {
       try {
         const collections = {
           chatSessions: collection(db, "chatSessions"),
-          bookings: collection(db, "bookings"),
+          bookings: collection(db, "appointments"),
           resources: collection(db, "resourceAccessLogs"),
           forum: collection(db, "forumPosts"),
         };

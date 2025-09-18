@@ -1,23 +1,18 @@
 "use client";
 
-// Your existing imports...
-
-import { PeerSupportForum } from "@/components/peer-support-forum";
-import { useAuth } from "@/hooks/useAuth";
-import { LoginPrompt } from "@/components/LoginPrompt";
-import { Skeleton } from "@/components/ui/skeleton";
-// --- 1. IMPORT useMemo FROM REACT ---
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, query, where, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, getDoc, onSnapshot } from 'firebase/firestore'; // Import onSnapshot for real-time updates
+import { useAuth } from "@/hooks/useAuth";
+import { PeerSupportForum } from "@/components/peer-support-forum";
+import { LoginPrompt } from "@/components/LoginPrompt";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Post } from '@/types';
 import { CreatePostModal } from "@/components/create-post-modal";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-
 
 export default function ForumPage() {
   const { user, loading } = useAuth();
@@ -27,47 +22,70 @@ export default function ForumPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [collegeId, setCollegeId] = useState<string | null>(null);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   const categories = ['Depression', 'Relationships', 'Cheating', 'Anxiety', 'Stress', 'Exams'];
 
+  // 👇 UPDATED: This useEffect now fetches the collegeId, then sets up a real-time listener for posts.
   useEffect(() => {
-    // This useEffect hook remains the same...
     if (!user) {
-      setCollegeId(null);
+      setPostsLoading(false);
       return;
     };
-    const fetchUserData = async () => {
+
+    const fetchUserDataAndSubscribeToPosts = async () => {
       const studentRef = doc(db, "students", user.uid);
       const studentSnap = await getDoc(studentRef);
+      
       if (studentSnap.exists()) {
-        setCollegeId(studentSnap.data()?.collegeId);
+        const studentCollegeId = studentSnap.data()?.collegeId;
+        setCollegeId(studentCollegeId);
+
+        if (studentCollegeId) {
+          // This query now filters posts by the student's collegeId
+          const postsCollectionRef = collection(db, 'forumPosts');
+          const q = query(
+            postsCollectionRef, 
+            where("collegeId", "==", studentCollegeId), // The crucial filter
+            where("status", "==", "approved"), 
+            orderBy("timestamp", "desc")
+          );
+
+          // Use onSnapshot for real-time updates
+          const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const posts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
+            setAllPosts(posts);
+            setPostsLoading(false);
+          });
+
+          return unsubscribe; // Return the unsubscribe function for cleanup
+        }
       }
+      setPostsLoading(false); // Also stop loading if no collegeId is found
     };
-    const fetchPosts = async () => {
-      const postsCollectionRef = collection(db, 'forumPosts');
-      const q = query(postsCollectionRef, where("status", "==", "approved"), orderBy("timestamp", "desc"));
-      const data = await getDocs(q);
-      setAllPosts(data.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post)));
+
+    const unsubscribePromise = fetchUserDataAndSubscribeToPosts();
+
+    return () => {
+        unsubscribePromise.then(unsubscribe => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        });
     };
-    fetchUserData();
-    fetchPosts();
   }, [user]);
 
-  // --- 2. ADD THIS BLOCK TO EFFICIENTLY CALCULATE COUNTS ---
   const categoryCounts = useMemo(() => {
     const counts: { [key: string]: number } = {};
-    // Loop through each post
     for (const post of allPosts) {
-      // Loop through each tag within a post
-      for (const tag of post.tags) {
-        // If the tag exists in our categories list, increment its count
-        if (categories.includes(tag)) {
+      if(post.tags) {
+        for (const tag of post.tags) {
           counts[tag] = (counts[tag] || 0) + 1;
         }
       }
     }
     return counts;
-  }, [allPosts, categories]); // This only recalculates when posts or categories change
+  }, [allPosts]);
 
   const handleCreatePostClick = () => {
       if (!user) {
@@ -83,7 +101,7 @@ export default function ForumPage() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <div className="max-w-7xl mx-auto"> {/* Adjusted for a wider layout */}
+      <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Peer Support Community</h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -95,10 +113,7 @@ export default function ForumPage() {
           <Skeleton className="h-96 w-full" />
         ) : user ? (
           <>
-            {/* --- Main Grid Layout --- */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-
-              {/* --- Left Column --- */}
               <aside className="md:col-span-1 space-y-6">
                 <Button onClick={handleCreatePostClick} size="lg" className="w-full">
                   <Plus className="mr-2 h-4 w-4" /> New Post
@@ -110,15 +125,15 @@ export default function ForumPage() {
                   categoryCounts={categoryCounts}
                   totalPostsCount={allPosts.length}
                 />
-                {/* You can add the "Forum Stats" card here later */}
               </aside>
 
-              {/* --- Right Column --- */}
               <section className="md:col-span-3">
-                {/* You can add the "Search Bar" here later */}
-                <PeerSupportForum posts={filteredPosts} />
+                {postsLoading ? (
+                    <Skeleton className="h-96 w-full" />
+                ) : (
+                    <PeerSupportForum posts={filteredPosts} />
+                )}
               </section>
-
             </div>
             
             <CreatePostModal

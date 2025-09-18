@@ -9,6 +9,7 @@ import { useToast } from "./ui/use-toast";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // 👈 ADDED
 import ThemeToggle from "./ThemeToggle";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
@@ -18,8 +19,10 @@ export function StudentRegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // 1. ADDED STATE for confirm password field and its visibility
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [yearOfStudy, setYearOfStudy] = useState(""); // 👈 ADDED
+  const [department, setDepartment] = useState("");   // 👈 ADDED
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -31,13 +34,12 @@ export function StudentRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!collegeId || !username || !email || !password || !confirmPassword) {
+    if (!collegeId || !username || !email || !password || !confirmPassword || !yearOfStudy || !department) {
       toast({ title: "Error", description: "Please fill in all fields.", variant: "destructive" });
       setIsLoading(false);
       return;
     }
 
-    // 2. ADDED LOGIC to check if passwords match
     if (password !== confirmPassword) {
       toast({ title: "Error", description: "Passwords do not match. Please try again.", variant: "destructive" });
       setIsLoading(false);
@@ -59,6 +61,8 @@ export function StudentRegisterPage() {
         username: username,
         email: email,
         collegeId: collegeId,
+        yearOfStudy: yearOfStudy,   // 👈 ADDED
+        department: department,     // 👈 ADDED
         createdAt: serverTimestamp(),
       });
 
@@ -90,23 +94,53 @@ export function StudentRegisterPage() {
           </div>
           <div>
             <Label htmlFor="username">Username</Label>
-            <Input id="username" type="text" placeholder="Choose username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            <Input id="username" type="text" placeholder="Choose a username" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </div>
+          
+          {/* 👇 NEW FIELDS ADDED HERE 👇 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="yearOfStudy">Year of Study</Label>
+                <Select onValueChange={setYearOfStudy} value={yearOfStudy}>
+                    <SelectTrigger id="yearOfStudy"><SelectValue placeholder="Select Year" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="First">First Year</SelectItem>
+                        <SelectItem value="Second">Second Year</SelectItem>
+                        <SelectItem value="Third">Third Year</SelectItem>
+                        <SelectItem value="Final">Final Year</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div>
+                <Label htmlFor="department">Department</Label>
+                <Select onValueChange={setDepartment} value={department}>
+                    <SelectTrigger id="department"><SelectValue placeholder="Select Department" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Engineering">Engineering</SelectItem>
+                        <SelectItem value="Arts & Sciences">Arts & Sciences</SelectItem>
+                        <SelectItem value="Business">Business</SelectItem>
+                        <SelectItem value="Medical">Medical</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+          </div>
+          {/* 👆 END OF NEW FIELDS 👆 */}
+
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="Your email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="relative">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type={showPassword ? "text" : "password"} placeholder="......" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Input id="password" type={showPassword ? "text" : "password"} placeholder="Must be at least 6 characters" value={password} onChange={(e) => setPassword(e.target.value)} required />
             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[2.1rem] text-muted-foreground">
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          {/* 3. ADDED UI for the Confirm Password field */}
           <div className="relative">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="......" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-[2.1rem] text-muted-foreground">
               {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>

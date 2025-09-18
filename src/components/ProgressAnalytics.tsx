@@ -24,7 +24,15 @@ const who5QuestionMap: Record<string, string> = {
   "1": "Mood", "2": "Calmness", "3": "Energy", "4": "Restfulness", "5": "Engagement",
 };
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: any[], label?: string }) => {
+// 👇 FIX #1: Defined a specific type for the tooltip payload to resolve the 'any' error
+interface TooltipPayload {
+  name: string;
+  value: number | string;
+  stroke?: string;
+  fill?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: { active?: boolean, payload?: TooltipPayload[], label?: string }) => {
   if (active && payload && payload.length) {
     const data = payload[0];
     return (
@@ -146,12 +154,13 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
   if (allResponses.length === 0) { 
     return (
       <Card>
+        {/* 👇 FIX #2: Corrected the card structure */}
         <CardHeader>
           <CardTitle>No Data Yet</CardTitle>
-          <CardContent>
-            <p>No students have completed an assessment yet. Data will appear here in real-time once they do.</p>
-          </CardContent>
         </CardHeader>
+        <CardContent>
+          <p>No students have completed an assessment yet. Data will appear here in real-time once they do.</p>
+        </CardContent>
       </Card>
     ); 
   }
@@ -176,7 +185,6 @@ export const ProgressAnalytics = ({ collegeId }: { collegeId: string }) => {
       </CardContent>
   );
 
-  // 🎨 Colors for bars
   const barColors = ["#f87171", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa"];
 
   return (

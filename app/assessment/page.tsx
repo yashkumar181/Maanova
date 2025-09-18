@@ -28,8 +28,8 @@ const gadQuestions = [
   { id: 1, text: "Feeling nervous, anxious, or on edge", category: "anxiety", categoryLabel: "Anxiety Symptoms", emoji: ["😌", "😟", "😰", "😱"] },
   { id: 2, text: "Not being able to stop or control worrying", category: "worry", categoryLabel: "Worry Control", emoji: ["😌", "🤔", "😟", "😫"] },
   { id: 3, text: "Worrying too much about different things", category: "worry", categoryLabel: "Excessive Worry", emoji: ["😌", "🤔", "😟", "😫"] },
-  { id: 4, text: "Trouble relaxing", category: "physical", categoryLabel: "Physical Tension", emoji: ["😌", "😐", " напряженный", "😬"] },
-  { id: 5, text: "Being so restless that it's hard to sit still", category: "physical", categoryLabel: "Restlessness", emoji: ["😌", " fidgety", " restless", "😫"] },
+  { id: 4, text: "Trouble relaxing", category: "physical", categoryLabel: "Physical Tension", emoji: ["😌", "😐", "😕", "😬"] },
+  { id: 5, text: "Being so restless that it's hard to sit still", category: "physical", categoryLabel: "Restlessness", emoji: ["😌", "😟", "😣", "😫"] },
   { id: 6, text: "Becoming easily annoyed or irritable", category: "mood", categoryLabel: "Irritability", emoji: ["😊", "😐", "😠", "😡"] },
   { id: 7, text: "Feeling afraid as if something awful might happen", category: "fear", categoryLabel: "Anticipatory Fear", emoji: ["😊", "🤔", "😨", "😱"] }
 ];

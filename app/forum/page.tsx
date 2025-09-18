@@ -1,8 +1,7 @@
 "use client";
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, where, orderBy, doc, getDoc, onSnapshot } from 'firebase/firestore'; // Import onSnapshot for real-time updates
+import { collection, query, where, orderBy, doc, getDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { useAuth } from "@/hooks/useAuth";
 import { PeerSupportForum } from "@/components/peer-support-forum";
 import { LoginPrompt } from "@/components/LoginPrompt";
@@ -19,21 +18,27 @@ export default function ForumPage() {
   const { toast } = useToast();
 
   const [allPosts, setAllPosts] = useState<Post[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedTag, setSelectedTag] = useState('All Posts');
+  const [filterableTags, setFilterableTags] = useState<string[]>([]);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [collegeId, setCollegeId] = useState<string | null>(null);
   const [postsLoading, setPostsLoading] = useState(true);
 
-  const categories = ['Depression', 'Relationships', 'Cheating', 'Anxiety', 'Stress', 'Exams'];
-
-  // 👇 UPDATED: This useEffect now fetches the collegeId, then sets up a real-time listener for posts.
   useEffect(() => {
+    // This useEffect hook remains the same
     if (!user) {
       setPostsLoading(false);
       return;
     };
-
-    const fetchUserDataAndSubscribeToPosts = async () => {
+    const fetchInitialDataAndSubscribe = async () => {
+      try {
+        const tagsSnapshot = await getDocs(collection(db, "forumTags"));
+        const tagsList = tagsSnapshot.docs.map(doc => doc.data().name as string);
+        setFilterableTags(tagsList.sort());
+      } catch (error) {
+        console.error("Error fetching forum tags:", error);
+      }
+      
       const studentRef = doc(db, "students", user.uid);
       const studentSnap = await getDoc(studentRef);
       
@@ -42,65 +47,69 @@ export default function ForumPage() {
         setCollegeId(studentCollegeId);
 
         if (studentCollegeId) {
-          // This query now filters posts by the student's collegeId
           const postsCollectionRef = collection(db, 'forumPosts');
           const q = query(
             postsCollectionRef, 
-            where("collegeId", "==", studentCollegeId), // The crucial filter
+            where("collegeId", "==", studentCollegeId),
             where("status", "==", "approved"), 
             orderBy("timestamp", "desc")
           );
-
-          // Use onSnapshot for real-time updates
           const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const posts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Post));
             setAllPosts(posts);
             setPostsLoading(false);
           });
-
-          return unsubscribe; // Return the unsubscribe function for cleanup
+          return unsubscribe;
         }
       }
-      setPostsLoading(false); // Also stop loading if no collegeId is found
+      setPostsLoading(false);
     };
-
-    const unsubscribePromise = fetchUserDataAndSubscribeToPosts();
-
+    const unsubscribePromise = fetchInitialDataAndSubscribe();
     return () => {
         unsubscribePromise.then(unsubscribe => {
-            if (unsubscribe) {
-                unsubscribe();
-            }
+            if (unsubscribe) unsubscribe();
         });
     };
   }, [user]);
 
-  const categoryCounts = useMemo(() => {
+  const tagCounts = useMemo(() => {
     const counts: { [key: string]: number } = {};
     for (const post of allPosts) {
-      if(post.tags) {
-        for (const tag of post.tags) {
-          counts[tag] = (counts[tag] || 0) + 1;
+      // --- UPDATED: Added .trim() to normalize data ---
+      const postInterests = new Set([
+        ...(post.tags || []).map(tag => tag.toLowerCase().trim()),
+        post.category?.toLowerCase().trim()
+      ]);
+
+      postInterests.forEach(interest => {
+        if (interest) {
+          counts[interest] = (counts[interest] || 0) + 1;
         }
-      }
+      });
     }
     return counts;
   }, [allPosts]);
 
   const handleCreatePostClick = () => {
-      if (!user) {
-          toast({ title: "Login Required", description: "You must be logged in to create a post.", variant: "destructive"});
-          return;
-      }
-      setIsCreatePostOpen(true);
+    if (!user) {
+        toast({ title: "Login Required", description: "You must be logged in to create a post.", variant: "destructive"});
+        return;
+    }
+    setIsCreatePostOpen(true);
   }
 
-  const filteredPosts = selectedCategory === 'all'
+  const filteredPosts = selectedTag === 'All Posts'
     ? allPosts
-    : allPosts.filter(post => post.tags && post.tags.includes(selectedCategory));
+    : allPosts.filter(post => {
+        // --- UPDATED: Added .trim() to normalize data ---
+        const lowerCaseSelectedTag = selectedTag.toLowerCase().trim();
+        const postTags = (post.tags || []).map(t => t.toLowerCase().trim());
+        return postTags.includes(lowerCaseSelectedTag) || post.category?.toLowerCase().trim() === lowerCaseSelectedTag;
+    });
 
   return (
     <main className="container mx-auto px-4 py-8">
+      {/* The rest of your JSX remains the same */}
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Peer Support Community</h1>
@@ -119,14 +128,13 @@ export default function ForumPage() {
                   <Plus className="mr-2 h-4 w-4" /> New Post
                 </Button>
                 <CategoryFilter
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={setSelectedCategory}
-                  categoryCounts={categoryCounts}
+                  categories={filterableTags}
+                  selectedCategory={selectedTag}
+                  onSelectCategory={setSelectedTag}
+                  categoryCounts={tagCounts}
                   totalPostsCount={allPosts.length}
                 />
               </aside>
-
               <section className="md:col-span-3">
                 {postsLoading ? (
                     <Skeleton className="h-96 w-full" />

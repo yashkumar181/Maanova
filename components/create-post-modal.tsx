@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 import { useState } from "react"
 import { collection, addDoc, Timestamp, doc, getDoc } from "firebase/firestore"
@@ -10,11 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Plus, X, Send, Shield } from "lucide-react"
+import { Plus, Send, Shield } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { db } from "@/lib/firebase"
 import { useToast } from "./ui/use-toast"
+import { TagSelector } from "./tag-selector" // 👈 Import the new component
 
 interface CreatePostModalProps {
   isOpen: boolean
@@ -32,13 +31,27 @@ const categories = [
   "General Support",
 ]
 
+const predefinedTags = [
+  "Anxiety",
+  "Depression",
+  "Stress",
+  "Exams",
+  "Academic Stress",
+  "Relationships",
+  "Loneliness",
+  "Self-Care",
+  "Procrastination",
+  "Sleep Issues",
+  "Career Planning",
+  "Seeking Advice",
+]
+
 export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreatePostModalProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [category, setCategory] = useState("")
   const [isAnonymous, setIsAnonymous] = useState(false)
-  const [tags, setTags] = useState<string[]>([])
-  const [newTag, setNewTag] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
 
@@ -56,7 +69,6 @@ export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreateP
     setIsSubmitting(true)
 
     try {
-      // Fetch the student's username using the userUid prop
       const studentDoc = await getDoc(doc(db, "students", userUid))
       const authorUsername = studentDoc.exists() ? studentDoc.data()?.username : "Anonymous"
 
@@ -64,33 +76,25 @@ export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreateP
         title,
         content,
         category,
-        authorUsername, // Use the fetched username
+        authorUsername,
         isAnonymous,
-        tags,
+        tags: selectedTags,
         timestamp: Timestamp.now(),
-        collegeId, // Use the collegeId prop
-        userUid, // Use the userUid prop
+        collegeId,
+        userUid,
         status: "pending",
         isModerated: false,
         replies: 0,
         likes: 0,
         flags: 0,
-        riskLevel: "low", // Set the default risk level
+        riskLevel: "low",
       })
 
       toast({
         title: "Success!",
         description: "Your post has been submitted for review.",
       })
-
-      // Reset form and close modal
-      setTitle("")
-      setContent("")
-      setCategory("")
-      setIsAnonymous(false)
-      setTags([])
-      setNewTag("")
-      onClose()
+      handleClose()
     } catch (error) {
       console.error("Error creating post:", error)
       toast({
@@ -102,29 +106,18 @@ export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreateP
       setIsSubmitting(false)
     }
   }
-
-  // ... rest of your component's functions and JSX (addTag, removeTag, etc.)
-  // This part does not need to change.
-  const addTag = (tag: string) => {
-    if (tag && !tags.includes(tag) && tags.length < 5) {
-      setTags([...tags, tag])
-      setNewTag("")
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove))
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && newTag.trim()) {
-      e.preventDefault()
-      addTag(newTag.trim())
-    }
-  }
+  
+  const handleClose = () => {
+    setTitle("");
+    setContent("");
+    setCategory("");
+    setIsAnonymous(false);
+    setSelectedTags([]);
+    onClose();
+  };
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
@@ -165,24 +158,14 @@ export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreateP
               <p className="text-xs text-muted-foreground mt-1">{content.length}/1000 characters</p>
             </div>
 
+            {/* 👇 REPLACE the old tag UI with the new TagSelector 👇 */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Tags (optional, max 5)</Label>
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center space-x-1">
-                      <span>#{tag}</span>
-                      <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex space-x-2">
-                  <Input value={newTag} onChange={(e) => setNewTag(e.target.value)} onKeyPress={handleKeyPress} placeholder="Add a tag..." disabled={tags.length >= 5} />
-                  <Button type="button" variant="outline" onClick={() => addTag(newTag.trim())} disabled={!newTag.trim() || tags.length >= 5}>Add</Button>
-                </div>
-              </div>
+              <TagSelector
+                predefinedTags={predefinedTags}
+                selectedTags={selectedTags}
+                onTagChange={setSelectedTags}
+              />
             </div>
 
             <div className="flex items-center space-x-2">
@@ -192,7 +175,7 @@ export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreateP
           </div>
 
           <div className="flex space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent" disabled={isSubmitting}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={handleClose} className="flex-1 bg-transparent" disabled={isSubmitting}>Cancel</Button>
             <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSubmitting || !title.trim() || !content.trim() || !category}>
               {isSubmitting ? (
                 <>
@@ -212,4 +195,3 @@ export function CreatePostModal({ isOpen, onClose, collegeId, userUid }: CreateP
     </Dialog>
   )
 }
-

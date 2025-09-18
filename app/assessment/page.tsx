@@ -170,7 +170,7 @@ export default function AssessmentPage() {
     );
   }
   
-  if (new Date().getDay() === 4 && todaysGAD7 && todaysPHQ9 && !showResults) {
+  if (new Date().getDay() === 5 && todaysGAD7 && todaysPHQ9 && !showResults) {
     return (
       <main className="min-h-screen bg-background p-4 flex items-center">
         <div className="max-w-2xl mx-auto w-full">

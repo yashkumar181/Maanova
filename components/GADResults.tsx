@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from 'react'; // 👈 ADDED
 import { useAuth } from '@/hooks/useAuth'; // 👈 ADDED
 import { saveProgressResponse } from '@/lib/progressService'; // 👈 ADDED

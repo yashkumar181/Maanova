@@ -11,6 +11,8 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, CheckCircle, RotateCcw, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link'; // 👈 ADDED
+
 
 interface GADResultsProps {
   responses: { [key: number]: number };
@@ -150,13 +152,14 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button onClick={onRestart} variant="outline"><RotateCcw className="h-4 w-4 mr-2" />Retake Assessment</Button>
-          <Button>Book Counseling Session</Button>
-          <Button variant="outline">View Resources</Button>
+            <Link href="/booking">
+              <Button className="w-full sm:w-auto">Book Counseling Session</Button>
+            </Link>
+            <Link href="/resources">
+              <Button variant="outline" className="w-full sm:w-auto">View Resources</Button>
+            </Link>
         </div>
-
         {/* Disclaimer */}
         <Card className="bg-muted/50">
           <CardContent className="pt-6">

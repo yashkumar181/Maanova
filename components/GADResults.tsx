@@ -119,7 +119,7 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
                   <XAxis dataKey="category" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} />
                   <YAxis domain={[0, 100]} />
                   <ChartTooltip content={<ChartTooltipContent />} labelFormatter={(value) => value} />
-                  <Bar dataKey="score" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="score" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>

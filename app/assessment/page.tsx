@@ -91,7 +91,7 @@ export default function AssessmentPage() {
       setTodaysGAD7(gad7);
       setTodaysPHQ9(phq9);
 
-      const isSpecialDay = today.getDay() === 5; // Thursday
+      const isSpecialDay = today.getDay() === 5; // Friday
 
       if (!isSpecialDay && who5) {
         handleViewResult(who5);
@@ -250,7 +250,13 @@ export default function AssessmentPage() {
           </CardHeader>
           
           <CardContent>
-            <div className={`grid grid-cols-${question.emoji.length > 4 ? 3 : 4} gap-2 sm:gap-4 mb-6`}>
+            {/* 👇 FIX IS HERE: Made the grid responsive and explicit 👇 */}
+            <div className={cn(
+              "grid gap-2 sm:gap-4 mb-6",
+              question.emoji.length > 4 
+                ? "grid-cols-3" // For WHO-5 (6 options)
+                : "grid-cols-2 md:grid-cols-4" // For GAD-7/PHQ-9 (4 options)
+            )}>
               {question.emoji.map((emoji, index) => (
                 <button
                   key={index}

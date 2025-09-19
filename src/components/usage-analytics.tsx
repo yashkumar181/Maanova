@@ -33,7 +33,7 @@ interface FeatureUsage {
 }
 
 interface AnalyticsDoc {
-    type: 'chatSessions' | 'appointments' | 'resources' | 'forum';
+    type: 'chatSessions' | 'bookings' | 'resources' | 'forum';
     timestamp?: Timestamp;
     createdAt?: Timestamp;
 }

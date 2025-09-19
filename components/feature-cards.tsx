@@ -1,71 +1,55 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ShieldCheck, Users, CalendarCheck, LineChart } from "lucide-react";
+import { ShieldCheck, Clock, Users } from "lucide-react";
+
+const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => {
+  return (
+    // 👇 FIX: Removed 'aspect-square' and 'justify-center' to make the card more compact 👇
+    <div className="flex flex-col items-center p-6 border rounded-xl bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg">
+      <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 mb-4">
+        {icon}
+      </div>
+      <h3 className="text-lg font-semibold text-card-foreground mb-2">
+        {title}
+      </h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {description}
+      </p>
+    </div>
+  );
+};
 
 export function FeatureCards() {
+  const features = [
+    {
+      icon: <ShieldCheck className="h-7 w-7 text-primary" />,
+      title: "100% Confidential",
+      description: "Your privacy is our priority. All conversations are secure and anonymous.",
+    },
+    {
+      icon: <Clock className="h-7 w-7 text-primary" />,
+      title: "24/7 Available",
+      description: "Get support whenever you need it, day or night, through our AI chat and resources.",
+    },
+    {
+      icon: <Users className="h-7 w-7 text-primary" />,
+      title: "Peer Community",
+      description: "Connect with other students who understand your experiences in a safe, moderated forum.",
+    },
+  ];
+
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-16 md:mt-20">
-      
-      {/* --- UPDATED STYLES FOR A MORE COMPACT LOOK --- */}
-      
-      <Card className="bg-card border text-center flex flex-col
-                      transition-all duration-300 ease-in-out hover:scale-105 hover:border-primary/50 rounded-xl aspect-square">
-        <CardContent className="flex flex-col items-center justify-center p-6 flex-grow">
-          <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary mb-4">
-            <ShieldCheck className="h-7 w-7" />
-          </div>
-          <CardTitle className="text-xl font-semibold text-card-foreground">
-            100% Confidential
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground mt-2">
-            Your privacy is our priority. All conversations are secure and anonymous.
-          </CardDescription>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border text-center flex flex-col
-                      transition-all duration-300 ease-in-out hover:scale-105 hover:border-primary/50 rounded-xl aspect-square">
-        <CardContent className="flex flex-col items-center justify-center p-6 flex-grow">
-          <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary mb-4">
-            <CalendarCheck className="h-7 w-7" />
-          </div>
-          <CardTitle className="text-xl font-semibold text-card-foreground">
-            Counselor Booking
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground mt-2">
-            Schedule a private session with a professional counselor at your convenience.
-          </CardDescription>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border text-center flex flex-col
-                      transition-all duration-300 ease-in-out hover:scale-105 hover:border-primary/50 rounded-xl aspect-square">
-        <CardContent className="flex flex-col items-center justify-center p-6 flex-grow">
-          <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary mb-4">
-            <LineChart className="h-7 w-7" />
-          </div>
-          <CardTitle className="text-xl font-semibold text-card-foreground">
-            Track Your Progress
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground mt-2">
-            Use assessments like GAD-7 & PHQ-9 to monitor your well-being and visualize progress over time.
-          </CardDescription>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-card border text-center flex flex-col
-                      transition-all duration-300 ease-in-out hover:scale-105 hover:border-primary/50 rounded-xl aspect-square">
-        <CardContent className="flex flex-col items-center justify-center p-6 flex-grow">
-          <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary/10 text-primary mb-4">
-            <Users className="h-7 w-7" />
-          </div>
-          <CardTitle className="text-xl font-semibold text-card-foreground">
-            Peer Community
-          </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground mt-2">
-            Connect with other students who understand your experiences.
-          </CardDescription>
-        </CardContent>
-      </Card>
+    <section className="py-16 md:py-20">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          {features.map((feature) => (
+            <FeatureCard
+              key={feature.title}
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+            />
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

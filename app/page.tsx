@@ -12,7 +12,6 @@ import { FeatureCards } from '@/components/feature-cards';
 export const dynamic = 'force-dynamic';
 
 const ChatLoginPrompt = () => (
-  // Using theme-aware classes here as well
   <div className="text-center p-8 border rounded-lg max-w-4xl mx-auto bg-card">
     <h2 className="text-2xl font-semibold mb-2">Unlock Your Personal Chat Support</h2>
     <p className="text-muted-foreground mb-6">
@@ -34,11 +33,15 @@ export default function HomePage() {
   };
 
   return (
-    // --- UPDATED: Using theme-aware classes instead of hardcoded colors ---
     <div className="min-h-screen bg-background text-foreground">
       <main className="container mx-auto px-4">
         <HeroSection onStartChatClick={handleStartChatClick} />
-        <FeatureCards />
+        
+        {/* 👇 FIX: Added a negative margin to reduce the space 👇 */}
+        <div className="-mt-16">
+          <FeatureCards />
+        </div>
+        
         <div ref={chatContainerRef} className="py-20 md:py-24">
           {loading ? (
             <Skeleton className="h-96 w-full max-w-4xl mx-auto" />

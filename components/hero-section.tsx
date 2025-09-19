@@ -10,9 +10,9 @@ interface HeroSectionProps {
 
 export function HeroSection({ onStartChatClick }: HeroSectionProps) {
   return (
-    // --- UPDATED: Increased bottom padding for more space ---
     <section className="text-center pt-12 pb-16 md:pt-20 md:pb-20">
-      <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-foreground">
+      {/* 👇 FIX: Changed font-extrabold to font-bold 👇 */}
+      <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-foreground">
         Your Mental Health Matters
       </h1>
       

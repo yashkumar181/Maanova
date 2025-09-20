@@ -56,7 +56,7 @@ const Index = () => {
 
             {/* Mobile Login Buttons */}
             <div className="md:hidden flex flex-col gap-3 mb-12 animate-slide-up">
-              <a href="https://mental-health-platform-eosin.vercel.app/" className="block">
+              <a href="https://maanova-939a.vercel.app/" className="block">
               <Button 
                 size="sm"
                 className="w-full max-w-xs mx-auto bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -276,7 +276,7 @@ Monitor your mental health journey with meaningful analytics that help you under
             <p className="text-lg text-muted-foreground mb-6">
               Haven't registered yet? Register your college
             </p>
-            <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/register">
+            <a href="https://maanova-939a.vercel.app/">
             <Button 
               size="lg"
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-full hover-lift min-w-[200px]"

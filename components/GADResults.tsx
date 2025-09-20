@@ -1,9 +1,8 @@
 "use client";
 
-
-import { useEffect, useState } from 'react'; // 👈 ADDED
-import { useAuth } from '@/hooks/useAuth'; // 👈 ADDED
-import { saveProgressResponse } from '@/lib/progressService'; // 👈 ADDED
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { saveProgressResponse } from '@/lib/progressService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,12 +10,14 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, CheckCircle, RotateCcw, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link'; // 👈 ADDED
+import Link from 'next/link';
 
-
+// 👇 FIX #1: Update the props interface to accept the new props
 interface GADResultsProps {
   responses: { [key: number]: number };
   onRestart: () => void;
+  isSaved: boolean;
+  setIsSaved: (value: boolean) => void;
 }
 
 const chartConfig = {
@@ -37,19 +38,17 @@ const gadQuestions = [
   { id: 7, category: 'fear' }
 ];
 
-export function GADResults({ responses, onRestart }: GADResultsProps) {
-  const { user } = useAuth(); // 👈 ADDED
-  const [isSaved, setIsSaved] = useState(false); // 👈 ADDED to prevent double saves
-
+export function GADResults({ responses, onRestart, isSaved, setIsSaved }: GADResultsProps) {
+  const { user } = useAuth();
   const totalScore = Object.values(responses).reduce((sum, value) => sum + value, 0);
   
-  // 👇 ADDED: This block saves the results to Firebase when the component loads
+  // 👇 FIX #2: Update the useEffect hook to use the props
   useEffect(() => {
     if (user && !isSaved) {
       saveProgressResponse(user.uid, "GAD7", totalScore, responses);
       setIsSaved(true);
     }
-  }, [user, totalScore, responses, isSaved]);
+  }, [user, totalScore, responses, isSaved, setIsSaved]);
 
   const getSeverityLevel = (score: number) => {
     if (score <= 4) return { level: 'Minimal', color: 'success', description: 'Minimal anxiety symptoms', icon: CheckCircle };
@@ -82,15 +81,12 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
   const percentageScore = (totalScore / 21) * 100;
 
   return (
-    <main className="min-h-screen bg-background p-4">
+    <main className="min-h-screen bg-background p-4 flex items-center">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Your GAD-7 Results</h1>
           <p className="text-muted-foreground">Based on your responses from the past two weeks</p>
         </div>
-
-        {/* Overall Score Card */}
         <Card>
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
@@ -109,8 +105,6 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
             </div>
           </CardContent>
         </Card>
-
-        {/* Category Breakdown Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Symptom Category Breakdown</CardTitle>
@@ -129,15 +123,6 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
             </ChartContainer>
           </CardContent>
         </Card>
-
-        {/* Detailed Scores */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {categoryScores.map((item) => (
-            <Card key={item.category}><CardContent className="pt-6"><div className="flex items-center justify-between"><div><h3 className="font-semibold">{item.category}</h3><p className="text-sm text-muted-foreground">Score: {item.rawScore}/{item.maxScore}</p></div><div className="text-2xl font-bold text-primary">{item.score}%</div></div><div className="mt-3 w-full bg-secondary rounded-full h-2"><div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${item.score}%` }} /></div></CardContent></Card>
-          ))}
-        </div>
-
-        {/* Recommendations */}
         <Card>
           <CardHeader>
             <CardTitle>Personalized Recommendations</CardTitle>
@@ -151,7 +136,6 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
             </ul>
           </CardContent>
         </Card>
-
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/booking">
               <Button className="w-full sm:w-auto">Book Counseling Session</Button>
@@ -160,7 +144,6 @@ export function GADResults({ responses, onRestart }: GADResultsProps) {
               <Button variant="outline" className="w-full sm:w-auto">View Resources</Button>
             </Link>
         </div>
-        {/* Disclaimer */}
         <Card className="bg-muted/50">
           <CardContent className="pt-6">
             <p className="text-xs text-muted-foreground text-center"><strong>Disclaimer:</strong> This assessment is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. If you're experiencing severe anxiety symptoms, please contact a healthcare professional or crisis helpline immediately.</p>

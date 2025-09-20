@@ -22,8 +22,6 @@ const who5Questions = [
   { id: 4, text: "I woke up feeling fresh and rested", category: "sleep", categoryLabel: "Sleep Quality", emoji: ["😵", "🥱", "😑", "😌", "😊", "🌟"] },
   { id: 5, text: "My daily life has been filled with things that interest me", category: "engagement", categoryLabel: "Life Engagement", emoji: ["😑", "😕", "🙄", "🤔", "😊", "🤩"] }
 ];
-
-// GAD-7 questions
 const gadQuestions = [
   { id: 1, text: "Feeling nervous, anxious, or on edge", category: "anxiety", categoryLabel: "Anxiety Symptoms", emoji: ["😌", "😟", "😰", "😱"] },
   { id: 2, text: "Not being able to stop or control worrying", category: "worry", categoryLabel: "Worry Control", emoji: ["😌", "🤔", "😟", "😫"] },
@@ -33,8 +31,6 @@ const gadQuestions = [
   { id: 6, text: "Becoming easily annoyed or irritable", category: "mood", categoryLabel: "Irritability", emoji: ["😊", "😐", "😠", "😡"] },
   { id: 7, text: "Feeling afraid as if something awful might happen", category: "fear", categoryLabel: "Anticipatory Fear", emoji: ["😊", "🤔", "😨", "😱"] }
 ];
-
-// PHQ-9 questions
 const phq9Questions = [
   { id: 1, text: "Little interest or pleasure in doing things", category: "mood", categoryLabel: "Interest & Pleasure", emoji: ["😊", "😐", "😔", "😞"] },
   { id: 2, text: "Feeling down, depressed, or hopeless", category: "mood", categoryLabel: "Depressed Mood", emoji: ["😊", "😐", "😔", "😭"] },
@@ -65,6 +61,9 @@ export default function AssessmentPage() {
   const [todaysGAD7, setTodaysGAD7] = useState<DocumentData | null>(null);
   const [todaysPHQ9, setTodaysPHQ9] = useState<DocumentData | null>(null);
 
+  // 👇 FIX #1: Add a state to track if the current submission has been saved
+  const [isSubmissionSaved, setIsSubmissionSaved] = useState(false);
+
   useEffect(() => {
     const checkExistingSubmissions = async () => {
       if (!user) {
@@ -91,9 +90,10 @@ export default function AssessmentPage() {
       setTodaysGAD7(gad7);
       setTodaysPHQ9(phq9);
 
-      const isSpecialDay = today.getDay() === 5; // Friday
+      const isSpecialDay = new Date().getDay() === 5; // Friday
 
       if (!isSpecialDay && who5) {
+        setIsSubmissionSaved(true); // Mark as already saved
         handleViewResult(who5);
       } else if (isSpecialDay && gad7 && phq9) {
         // Let render logic handle the "View Results" screen
@@ -142,6 +142,7 @@ export default function AssessmentPage() {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
+      setIsSubmissionSaved(false); // It's a new submission, so it's not saved yet
       setShowResults(true);
     }
   };
@@ -179,10 +180,10 @@ export default function AssessmentPage() {
             <p className="text-muted-foreground">You've completed all assessments for today. Great job! Choose which results you'd like to review.</p>
           </div>
           <div className="grid gap-6">
-            <Card className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleViewResult(todaysGAD7!)}>
+            <Card className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => { setIsSubmissionSaved(true); handleViewResult(todaysGAD7!); }}>
               <CardHeader><div className="flex items-center"><Eye className="h-8 w-8 text-primary mr-3" /><div><CardTitle>View GAD-7 Anxiety Results</CardTitle></div></div></CardHeader>
             </Card>
-            <Card className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleViewResult(todaysPHQ9!)}>
+            <Card className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => { setIsSubmissionSaved(true); handleViewResult(todaysPHQ9!); }}>
               <CardHeader><div className="flex items-center"><Eye className="h-8 w-8 text-primary mr-3" /><div><CardTitle>View PHQ-9 Depression Results</CardTitle></div></div></CardHeader>
             </Card>
           </div>
@@ -200,10 +201,10 @@ export default function AssessmentPage() {
             <p className="text-muted-foreground">Select the assessment you'd like to take today.</p>
           </div>
           <div className="grid gap-6">
-            <Card className={cn("transition-all", todaysGAD7 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/50")} onClick={() => !todaysGAD7 && handleAssessmentChoice('GAD7')}>
+            <Card className={cn("transition-all", todaysGAD7 ? "opacity-50" : "cursor-pointer hover:border-primary/50")} onClick={() => { if(todaysGAD7) { setIsSubmissionSaved(true); handleViewResult(todaysGAD7); } else { handleAssessmentChoice('GAD7'); } }}>
               <CardHeader><div className="flex items-center"><Brain className="h-8 w-8 text-primary mr-3" /><div><CardTitle>GAD-7 Anxiety Assessment</CardTitle><p className="text-sm text-muted-foreground">Measure anxiety symptoms.</p></div>{todaysGAD7 && <Badge className="ml-auto">Completed</Badge>}</div></CardHeader>
             </Card>
-            <Card className={cn("transition-all", todaysPHQ9 ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/50")} onClick={() => !todaysPHQ9 && handleAssessmentChoice('PHQ9')}>
+            <Card className={cn("transition-all", todaysPHQ9 ? "opacity-50" : "cursor-pointer hover:border-primary/50")} onClick={() => { if(todaysPHQ9) { setIsSubmissionSaved(true); handleViewResult(todaysPHQ9); } else { handleAssessmentChoice('PHQ9'); } }}>
               <CardHeader><div className="flex items-center"><Heart className="h-8 w-8 text-primary mr-3" /><div><CardTitle>PHQ-9 Depression Assessment</CardTitle><p className="text-sm text-muted-foreground">Evaluate depression symptoms.</p></div>{todaysPHQ9 && <Badge className="ml-auto">Completed</Badge>}</div></CardHeader>
             </Card>
           </div>
@@ -214,11 +215,11 @@ export default function AssessmentPage() {
 
   if (showResults) {
     if (assessmentType === 'GAD7') {
-      return <GADResults responses={responses} onRestart={handleRestart} />;
+      return <GADResults responses={responses} onRestart={handleRestart} isSaved={isSubmissionSaved} setIsSaved={setIsSubmissionSaved} />;
     } else if (assessmentType === 'PHQ9') {
-      return <PHQ9Results responses={responses} onRestart={handleRestart} />;
+      return <PHQ9Results responses={responses} onRestart={handleRestart} isSaved={isSubmissionSaved} setIsSaved={setIsSubmissionSaved} />;
     } else {
-      return <WHO5Results responses={responses} questions={who5Questions} onRestart={handleRestart} />;
+      return <WHO5Results responses={responses} questions={who5Questions} onRestart={handleRestart} isSaved={isSubmissionSaved} setIsSaved={setIsSubmissionSaved} />;
     }
   }
 
@@ -250,12 +251,11 @@ export default function AssessmentPage() {
           </CardHeader>
           
           <CardContent>
-            {/* 👇 FIX IS HERE: Made the grid responsive and explicit 👇 */}
             <div className={cn(
               "grid gap-2 sm:gap-4 mb-6",
               question.emoji.length > 4 
-                ? "grid-cols-3" // For WHO-5 (6 options)
-                : "grid-cols-2 md:grid-cols-4" // For GAD-7/PHQ-9 (4 options)
+                ? "grid-cols-3"
+                : "grid-cols-2 md:grid-cols-4"
             )}>
               {question.emoji.map((emoji, index) => (
                 <button

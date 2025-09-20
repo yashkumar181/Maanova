@@ -10,12 +10,14 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { AlertTriangle, CheckCircle, RotateCcw, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link'; // 👈 ADDED
+import Link from 'next/link';
 
-
+// 👇 FIX #1: Update the props interface to accept the new props
 interface PHQ9ResultsProps {
   responses: { [key: number]: number };
   onRestart: () => void;
+  isSaved: boolean;
+  setIsSaved: (value: boolean) => void;
 }
 
 const chartConfig = {
@@ -36,19 +38,18 @@ const phq9Questions = [
   { id: 7, category: 'cognitive' }, { id: 8, category: 'physical' }, { id: 9, category: 'social' }
 ];
 
-export function PHQ9Results({ responses, onRestart }: PHQ9ResultsProps) {
+export function PHQ9Results({ responses, onRestart, isSaved, setIsSaved }: PHQ9ResultsProps) {
   const { user } = useAuth();
-  const [isSaved, setIsSaved] = useState(false);
-
   const totalScore = Object.values(responses).reduce((sum, value) => sum + value, 0);
   
+  // 👇 FIX #2: Update the useEffect hook to use the props
   useEffect(() => {
     if (user && !isSaved) {
       saveProgressResponse(user.uid, "PHQ9", totalScore, responses);
       setIsSaved(true);
     }
-  }, [user, totalScore, responses, isSaved]);
-
+  }, [user, totalScore, responses, isSaved, setIsSaved]);
+  
   const getSeverityLevel = (score: number) => {
     if (score <= 4) return { level: 'Minimal', color: 'success', description: 'Minimal depression symptoms', icon: CheckCircle };
     if (score <= 9) return { level: 'Mild', color: 'warning', description: 'Mild depression symptoms', icon: TrendingUp };
@@ -73,24 +74,21 @@ export function PHQ9Results({ responses, onRestart }: PHQ9ResultsProps) {
 
   const getRecommendations = () => {
     if (totalScore <= 4) return ["Continue your current self-care practices", "Maintain regular exercise and social connections", "Practice gratitude and mindfulness techniques"];
-    if (totalScore <= 9) return ["Consider lifestyle changes like regular exercise", "Maintain social connections and activities you enjoy", "Practice stress management techniques", "Monitor your mood over time"];
-    if (totalScore <= 14) return ["Consider speaking with a healthcare provider", "Explore therapy options like CBT", "Maintain regular exercise and healthy sleep habits", "Stay connected with supportive friends and family"];
-    if (totalScore <= 19) return ["Strongly consider professional help from a mental health provider", "Contact your healthcare provider soon", "Consider therapy and/or medication evaluation", "Maintain daily structure and routine"];
-    return ["Seek immediate professional help from a mental health provider", "Contact your healthcare provider or crisis helpline", "Consider intensive treatment options", "Reach out to support networks and emergency resources"];
+    if (totalScore <= 9) return ["Consider lifestyle changes like regular exercise", "Maintain social connections and activities you enjoy", "Practice stress management techniques"];
+    if (totalScore <= 14) return ["Consider speaking with a healthcare provider", "Explore therapy options like CBT", "Maintain regular exercise and healthy sleep habits"];
+    if (totalScore <= 19) return ["Strongly consider professional help from a mental health provider", "Contact your healthcare provider soon", "Consider therapy and/or medication evaluation"];
+    return ["Seek immediate professional help from a mental health provider", "Contact your healthcare provider or crisis helpline", "Consider intensive treatment options"];
   };
 
   const percentageScore = (totalScore / 27) * 100;
 
   return (
-    <main className="min-h-screen bg-background p-4">
+    <main className="min-h-screen bg-background p-4 flex items-center">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Your PHQ-9 Results</h1>
           <p className="text-muted-foreground">Based on your responses from the past week</p>
         </div>
-
-        {/* Overall Score Card */}
         <Card>
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
@@ -118,8 +116,6 @@ export function PHQ9Results({ responses, onRestart }: PHQ9ResultsProps) {
             </div>
           </CardContent>
         </Card>
-
-        {/* Category Breakdown Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Symptom Category Breakdown</CardTitle>
@@ -138,31 +134,6 @@ export function PHQ9Results({ responses, onRestart }: PHQ9ResultsProps) {
             </ChartContainer>
           </CardContent>
         </Card>
-
-        {/* Detailed Scores */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {categoryScores.map((item) => (
-            <Card key={item.category}>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">{item.category}</h3>
-                    <p className="text-sm text-muted-foreground">Score: {item.rawScore}/{item.maxScore}</p>
-                  </div>
-                  <div className="text-2xl font-bold text-primary">{item.score}%</div>
-                </div>
-                <div className="mt-3 w-full bg-secondary rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all" 
-                    style={{ width: `${item.score}%` }} 
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Recommendations */}
         <Card>
           <CardHeader>
             <CardTitle>Personalized Recommendations</CardTitle>
@@ -181,9 +152,7 @@ export function PHQ9Results({ responses, onRestart }: PHQ9ResultsProps) {
             </ul>
           </CardContent>
         </Card>
-
-        {/* Action Buttons */}
-         <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/booking">
               <Button className="w-full sm:w-auto">Book Counseling Session</Button>
             </Link>
@@ -191,8 +160,6 @@ export function PHQ9Results({ responses, onRestart }: PHQ9ResultsProps) {
               <Button variant="outline" className="w-full sm:w-auto">View Resources</Button>
             </Link>
         </div>
-
-        {/* Disclaimer */}
         <Card className="bg-muted/50">
           <CardContent className="pt-6">
             <p className="text-xs text-muted-foreground text-center">

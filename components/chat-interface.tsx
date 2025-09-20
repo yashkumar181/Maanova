@@ -158,7 +158,7 @@ export function ChatInterface() {
         <Card className="max-w-4xl mx-auto">
             <div className="p-6">
                 <div className="flex items-center space-x-3 mb-6"><div className="p-2 bg-primary/10 rounded-full"><Bot className="h-6 w-6 text-primary" /></div><div><h2 className="text-xl font-semibold">AI Mental Health Support</h2><p className="text-sm text-muted-foreground">Confidential chat support available 24/7</p></div></div>
-                <Alert className="mb-6 border-primary/20 bg-primary/5"><AlertCircle className="h-4 w-4 text-primary" /><AlertDescription className="text-sm">This AI provides initial support and coping strategies. For immediate crisis support, call 988 or contact campus emergency services.</AlertDescription></Alert>
+                <Alert className="mb-6 border-primary/20 bg-primary/5"><AlertCircle className="h-4 w-4 text-primary" /><AlertDescription className="text-sm">This AI provides initial support and coping strategies. For immediate crisis support, call 1800-89-14416 or contact campus emergency services.</AlertDescription></Alert>
 
                 <ScrollArea className="h-96 mb-4 p-4 border rounded-lg" viewportRef={scrollViewportRef}>
                     <div className="space-y-4">
@@ -170,7 +170,7 @@ export function ChatInterface() {
                                     </div>
                                     <div className={`p-3 rounded-lg ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                                         <p className="text-sm leading-relaxed">{message.content}</p>
-                                        {message.type === "crisis" && ( <div className="mt-3 pt-3 border-t border-destructive/20"><Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={() => window.open("tel:988", "_self")}><Phone className="mr-2 h-3 w-3" /> Call Crisis Line: 988</Button></div> )}
+                                        {message.type === "crisis" && ( <div className="mt-3 pt-3 border-t border-destructive/20"><Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={() => window.open("tel:1800-89-14416", "_self")}><Phone className="mr-2 h-3 w-3" /> Call Crisis Line: 1800-89-14416</Button></div> )}
                                         {message.type === "referral" && ( <div className="mt-3 pt-3 border-t border-accent/20"><Button size="sm" variant="outline" className="border-accent text-accent hover:bg-accent/10 bg-transparent" onClick={() => window.location.href = "/booking"}>Book Counselor Appointment</Button></div> )}
                                     </div>
                                 </div>

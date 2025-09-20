@@ -1,14 +1,5 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-<<<<<<< HEAD
-  "style": "default",
-  "rsc": false,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.ts",
-    "css": "src/index.css",
-    "baseColor": "slate",
-=======
   "style": "new-york",
   "rsc": true,
   "tsx": true,
@@ -16,7 +7,6 @@
     "config": "",
     "css": "app/globals.css",
     "baseColor": "neutral",
->>>>>>> student-app/main
     "cssVariables": true,
     "prefix": ""
   },
@@ -26,11 +16,6 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
-<<<<<<< HEAD
-  }
-}
-=======
   },
   "iconLibrary": "lucide"
 }
->>>>>>> student-app/main

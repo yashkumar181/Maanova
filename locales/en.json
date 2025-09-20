@@ -1,0 +1,13 @@
+{
+  "navigation": {
+    "title": "मनova ",
+    "chat": "Chat Support",
+    "booking": "Book Counselor",
+    "resources": "Resources",
+    "forum": "Peer Support",
+    "login": "Login",
+    "register": "Register",
+    "profile": "My Profile",
+    "sign_out": "Sign Out"
+  }
+}

@@ -65,7 +65,7 @@ const Index = () => {
                 Student Access
               </Button>
               </a>
-              <a href="https://admin-dashboard-ivory-alpha-36.vercel.app/" className="block">
+              <a href="https://maanova-admindashboard.vercel.app/" className="block">
               <Button 
                 size="sm"
                 className="w-full max-w-xs mx-auto bg-primary hover:bg-primary/90 text-primary-foreground"

@@ -1,4 +1,4 @@
-"use client";
+å"use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -245,7 +245,7 @@ export default function AssessmentPage() {
           <CardHeader>
             <div className="text-sm text-primary font-medium mb-2">{question.categoryLabel}</div>
             <CardTitle className="text-lg leading-relaxed">
-              {'Over the last two weeks, how often have you been bothered by:'}
+              {'Over the last week :'}
             </CardTitle>
             <p className="text-base text-foreground font-medium">"{question.text}"</p>
           </CardHeader>

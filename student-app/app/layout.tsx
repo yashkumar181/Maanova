@@ -10,7 +10,7 @@ import { Providers } from "@/components/Providers";
 
 
 export const metadata: Metadata = {
-  title: "MindCare | Your Mental Health Platform",
+  title: " मनova | College Health Platform",
   description: "A safe space for student mental health support.",
 };
 

@@ -1,4 +1,4 @@
-m# मनova: A Digital Mental Health Platform for Students 🤝
+# मनova: A Digital Mental Health Platform for Students 🤝
 
 मनova is a comprehensive web application designed to provide *innovative digital mental health and psychological support* for students in higher education. This platform tackles the critical need for *structured, accessible, and stigma-free* mental health services by offering a centralized hub for students and administrators alike. Built with modern web development technologies, it delivers a robust and scalable solution tailored to the unique needs of college communities.
 

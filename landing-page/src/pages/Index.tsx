@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { InspirationalBanner } from "@/components/InspirationalBanner";
 import { ResourceCard } from "@/components/ResourceCard";

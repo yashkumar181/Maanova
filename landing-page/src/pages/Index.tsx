@@ -19,7 +19,7 @@ import {
   TreePine,
   Star
 } from "lucide-react";
-import groupSupportImage from "@/assets/landing_image.jpeg";
+import groupSupportImage from "@/assets/landing_image.jpg";
 
 const Index = () => {
   return (
